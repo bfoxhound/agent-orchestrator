@@ -50,19 +50,15 @@ type ReviewerConfig struct {
 	Harness ReviewerHarness `json:"harness"`
 }
 
-// FallbackReviewerHarness is the reviewer used when a project configures none
-// and the worker's harness is not itself a supported reviewer.
+// FallbackReviewerHarness is the reviewer used when a project configures none.
 const FallbackReviewerHarness = ReviewerClaudeCode
 
 // ResolveReviewerHarness picks the reviewer harness for a worker. A configured
-// reviewer wins; otherwise it reuses the worker's own harness when that harness
-// is also a supported reviewer, falling back to claude-code.
+// reviewer wins; otherwise it falls back to claude-code regardless of the
+// worker harness.
 func (c ProjectConfig) ResolveReviewerHarness(workerHarness AgentHarness) ReviewerHarness {
 	if len(c.Reviewers) > 0 {
 		return c.Reviewers[0].Harness
-	}
-	if h := ReviewerHarness(workerHarness); h.IsKnown() {
-		return h
 	}
 	return FallbackReviewerHarness
 }
