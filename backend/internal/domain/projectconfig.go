@@ -39,7 +39,7 @@ type ProjectConfig struct {
 
 	// Reviewers names the agent(s) that review a worker's PR when a review is
 	// triggered. It is configured independently of the Worker override; an empty
-	// list falls back to the worker's own harness (see ResolveReviewerHarness).
+	// list falls back to claude-code (see ResolveReviewerHarness).
 	Reviewers []ReviewerConfig `json:"reviewers,omitempty"`
 }
 
@@ -56,7 +56,7 @@ const FallbackReviewerHarness = ReviewerClaudeCode
 // ResolveReviewerHarness picks the reviewer harness for a worker. A configured
 // reviewer wins; otherwise it falls back to claude-code regardless of the
 // worker harness.
-func (c ProjectConfig) ResolveReviewerHarness(workerHarness AgentHarness) ReviewerHarness {
+func (c ProjectConfig) ResolveReviewerHarness(_ AgentHarness) ReviewerHarness {
 	if len(c.Reviewers) > 0 {
 		return c.Reviewers[0].Harness
 	}

@@ -489,7 +489,7 @@ function ReviewPanel({
 	}
 
 	const latest = latestReview(reviews);
-	const harness = latest?.harness || config?.reviewers?.[0]?.harness || session.provider || "reviewer";
+	const harness = latest?.harness || config?.reviewers?.[0]?.harness || "claude-code";
 
 	return (
 		<div className="reviewer-list">
