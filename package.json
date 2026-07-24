@@ -1,6 +1,7 @@
 {
 	"name": "agent-orchestrator",
 	"private": true,
+	"packageManager": "pnpm@9.15.0",
 	"scripts": {
 		"lint": "cd backend && go test ./... && go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2 run --path-mode=abs",
 		"frontend:typecheck": "npm --prefix frontend run typecheck",
