@@ -54,6 +54,7 @@ projects:
     orchestratorRules: | # Rules for the orchestrator agent
 
 
+
     # Orchestrator session strategy (optional)
     orchestratorSessionStrategy: reuse
     # Options: reuse | delete | ignore | delete-new | ignore-new | kill-previous
