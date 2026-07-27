@@ -20,7 +20,13 @@ jobs:
   doctor:
     runs-on: ubuntu-latest
     steps:
+      # Full history: react-doctor diffs against main so it reports only what
+      # this PR introduces. With a shallow checkout there is no merge base, so
+      # it falls back to listing every finding in the changed files — including
+      # ones that already exist on main.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # Composite action: installs react-doctor itself, runs the scan against
       # the landing site, posts a sticky PR summary + inline review comments,
