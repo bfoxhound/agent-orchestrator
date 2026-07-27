@@ -281,6 +281,17 @@ vi.mock("node:process", async (importOriginal) => {
 import { Command } from "commander";
 import { registerStart, registerStop, autoCreateConfig } from "../../src/commands/start.js";
 
+/**
+ * Create a temp dir whose path is already canonical. On Windows os.tmpdir()
+ * returns an 8.3 short name ("C:\\Users\\RUNNER~1\\..."), while git and
+ * realpath report the long form — so anything comparing the two decides the
+ * paths differ. realpathSync.native expands short names; plain realpathSync
+ * does not.
+ */
+function makeTempRoot(prefix: string): string {
+	return realpathSync.native(mkdtempSync(join(tmpdir(), prefix)));
+}
+
 let tmpDir: string;
 let program: Command;
 let cwdSpy: ReturnType<typeof vi.spyOn>;
@@ -321,7 +332,7 @@ function createSpawnChild(options?: {
 }
 
 beforeEach(async () => {
-	tmpDir = mkdtempSync(join(tmpdir(), "ao-start-test-"));
+	tmpDir = makeTempRoot("ao-start-test-");
 	originalAoGlobalConfig = process.env["AO_GLOBAL_CONFIG"];
 	process.env["AO_GLOBAL_CONFIG"] = join(tmpDir, "global-agent-orchestrator.yaml");
 

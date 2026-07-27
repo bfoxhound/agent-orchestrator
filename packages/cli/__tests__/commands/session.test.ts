@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readFileSync, readdirSync, rmSync, realpathSync } from "node:fs";
 import { EventEmitter } from "node:events";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -152,11 +152,22 @@ const STORAGE_KEY = "111111111112";
 import { Command } from "commander";
 import { registerSession } from "../../src/commands/session.js";
 
+/**
+ * Create a temp dir whose path is already canonical. On Windows os.tmpdir()
+ * returns an 8.3 short name ("C:\\Users\\RUNNER~1\\..."), while git and
+ * realpath report the long form — so anything comparing the two decides the
+ * paths differ. realpathSync.native expands short names; plain realpathSync
+ * does not.
+ */
+function makeTempRoot(prefix: string): string {
+	return realpathSync.native(mkdtempSync(join(tmpdir(), prefix)));
+}
+
 let program: Command;
 let consoleSpy: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
-	tmpDir = mkdtempSync(join(tmpdir(), "ao-session-test-"));
+	tmpDir = makeTempRoot("ao-session-test-");
 	originalHome = process.env["HOME"];
 	process.env["HOME"] = tmpDir;
 

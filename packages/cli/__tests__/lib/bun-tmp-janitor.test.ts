@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
-import { mkdtempSync, writeFileSync, existsSync, statSync, utimesSync } from "node:fs";
+import { mkdtempSync, writeFileSync, existsSync, statSync, utimesSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -19,6 +19,17 @@ vi.mock("@aoagents/ao-core", async () => {
 
 import { isBunTmpJanitorRunning, startBunTmpJanitor, stopBunTmpJanitor } from "../../src/lib/bun-tmp-janitor.js";
 
+/**
+ * Create a temp dir whose path is already canonical. On Windows os.tmpdir()
+ * returns an 8.3 short name ("C:\\Users\\RUNNER~1\\..."), while git and
+ * realpath report the long form — so anything comparing the two decides the
+ * paths differ. realpathSync.native expands short names; plain realpathSync
+ * does not.
+ */
+function makeTempRoot(prefix: string): string {
+	return realpathSync.native(mkdtempSync(join(tmpdir(), prefix)));
+}
+
 const PATTERN_NAME = ".fcb8efb7fbaad77d-00000000.so";
 
 function setMtime(path: string, ageMs: number): void {
@@ -31,7 +42,7 @@ function setMtime(path: string, ageMs: number): void {
 // behavioural tests below have no work to assert against.
 describe.skipIf(process.platform === "win32")("bun-tmp-janitor", () => {
 	beforeEach(() => {
-		mockedDir = mkdtempSync(join(tmpdir(), "ao-bun-janitor-test-"));
+		mockedDir = makeTempRoot("ao-bun-janitor-test-");
 	});
 
 	afterEach(async () => {

@@ -1,9 +1,20 @@
 import { describe, it, expect } from "vitest";
-import { chmodSync, existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync, realpathSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+
+/**
+ * Create a temp dir whose path is already canonical. On Windows os.tmpdir()
+ * returns an 8.3 short name ("C:\\Users\\RUNNER~1\\..."), while git and
+ * realpath report the long form — so anything comparing the two decides the
+ * paths differ. realpathSync.native expands short names; plain realpathSync
+ * does not.
+ */
+function makeTempRoot(prefix: string): string {
+	return realpathSync.native(mkdtempSync(join(tmpdir(), prefix)));
+}
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const scriptPath = join(packageRoot, "src", "assets", "scripts", "ao-update.sh");
@@ -19,7 +30,7 @@ function createFakeBinary(binDir: string, name: string, body: string): void {
 
 describe("ao-update.sh", () => {
 	it("falls back to origin when no upstream remote exists", () => {
-		const tempRoot = mkdtempSync(join(tmpdir(), "ao-update-script-"));
+		const tempRoot = makeTempRoot("ao-update-script-");
 		const fakeRepo = join(tempRoot, "repo");
 		mkdirSync(join(fakeRepo, "packages", "cli"), { recursive: true });
 		mkdirSync(join(fakeRepo, "packages", "ao"), { recursive: true });
@@ -81,7 +92,7 @@ esac\nexit 0`,
 	it.skipIf(process.platform === "win32")(
 		"syncs the fork with upstream via gh and fast-forwards the local checkout from upstream",
 		() => {
-			const tempRoot = mkdtempSync(join(tmpdir(), "ao-update-upstream-script-"));
+			const tempRoot = makeTempRoot("ao-update-upstream-script-");
 			const fakeRepo = join(tempRoot, "repo");
 			mkdirSync(join(fakeRepo, "packages", "cli"), { recursive: true });
 			mkdirSync(join(fakeRepo, "packages", "ao"), { recursive: true });
@@ -141,7 +152,7 @@ esac\nexit 0`,
 	);
 
 	it.skipIf(process.platform === "win32")("uses forced npm link so stale global ao shims are overwritten", () => {
-		const tempRoot = mkdtempSync(join(tmpdir(), "ao-update-stale-shim-"));
+		const tempRoot = makeTempRoot("ao-update-stale-shim-");
 		const fakeRepo = join(tempRoot, "repo");
 		mkdirSync(join(fakeRepo, "packages", "cli"), { recursive: true });
 		mkdirSync(join(fakeRepo, "packages", "ao"), { recursive: true });
@@ -207,7 +218,7 @@ exit 0`,
 	});
 
 	it.skipIf(process.platform === "win32")("runs the built-in smoke commands in smoke-only mode", () => {
-		const tempRoot = mkdtempSync(join(tmpdir(), "ao-update-smoke-"));
+		const tempRoot = makeTempRoot("ao-update-smoke-");
 		const fakeRepo = join(tempRoot, "repo");
 		mkdirSync(join(fakeRepo, "packages", "ao", "bin"), { recursive: true });
 		writeFileSync(join(fakeRepo, "packages", "ao", "bin", "ao.js"), "#!/usr/bin/env node\n");
@@ -242,7 +253,7 @@ exit 0`,
 	});
 
 	it("fails fast on a dirty install repo with an actionable message", () => {
-		const tempRoot = mkdtempSync(join(tmpdir(), "ao-update-dirty-"));
+		const tempRoot = makeTempRoot("ao-update-dirty-");
 		const fakeRepo = join(tempRoot, "repo");
 		mkdirSync(fakeRepo, { recursive: true });
 
@@ -282,7 +293,7 @@ exit 0`,
 	it.skipIf(process.platform === "win32")(
 		"skips rebuild but still runs smoke tests when local HEAD matches remote HEAD",
 		() => {
-			const tempRoot = mkdtempSync(join(tmpdir(), "ao-update-already-latest-"));
+			const tempRoot = makeTempRoot("ao-update-already-latest-");
 			const fakeRepo = join(tempRoot, "repo");
 			mkdirSync(join(fakeRepo, "packages", "cli"), { recursive: true });
 			mkdirSync(join(fakeRepo, "packages", "ao", "bin"), { recursive: true });
@@ -357,7 +368,7 @@ exit 0`,
 	});
 
 	it("reports when the update itself dirties the checkout", () => {
-		const tempRoot = mkdtempSync(join(tmpdir(), "ao-update-post-dirty-"));
+		const tempRoot = makeTempRoot("ao-update-post-dirty-");
 		const fakeRepo = join(tempRoot, "repo");
 		mkdirSync(join(fakeRepo, "packages", "cli"), { recursive: true });
 		mkdirSync(join(fakeRepo, "packages", "ao"), { recursive: true });

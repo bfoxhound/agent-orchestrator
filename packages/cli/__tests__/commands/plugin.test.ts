@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Command } from "commander";
@@ -47,6 +47,17 @@ vi.mock("../../src/commands/setup.js", () => ({
 }));
 
 import { registerPlugin } from "../../src/commands/plugin.js";
+
+/**
+ * Create a temp dir whose path is already canonical. On Windows os.tmpdir()
+ * returns an 8.3 short name ("C:\\Users\\RUNNER~1\\..."), while git and
+ * realpath report the long form — so anything comparing the two decides the
+ * paths differ. realpathSync.native expands short names; plain realpathSync
+ * does not.
+ */
+function makeTempRoot(prefix: string): string {
+	return realpathSync.native(mkdtempSync(join(tmpdir(), prefix)));
+}
 
 const OPENCLAW_PACKAGE = "@aoagents/ao-plugin-notifier-openclaw";
 const GOOSE_PACKAGE = "@example/ao-plugin-agent-goose";
@@ -96,7 +107,7 @@ describe("plugin command", () => {
 	const storeVersions = new Map<string, string>();
 
 	beforeEach(() => {
-		tempDir = mkdtempSync(join(tmpdir(), "ao-plugin-command-test-"));
+		tempDir = makeTempRoot("ao-plugin-command-test-");
 		configPath = join(tempDir, "agent-orchestrator.yaml");
 		registryCachePath = join(tempDir, "plugin-registry-cache.json");
 		writeConfig(configPath);

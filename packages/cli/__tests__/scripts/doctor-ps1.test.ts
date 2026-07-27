@@ -1,9 +1,20 @@
 import { describe, it, expect } from "vitest";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+
+/**
+ * Create a temp dir whose path is already canonical. On Windows os.tmpdir()
+ * returns an 8.3 short name ("C:\\Users\\RUNNER~1\\..."), while git and
+ * realpath report the long form — so anything comparing the two decides the
+ * paths differ. realpathSync.native expands short names; plain realpathSync
+ * does not.
+ */
+function makeTempRoot(prefix: string): string {
+	return realpathSync.native(mkdtempSync(join(tmpdir(), prefix)));
+}
 
 // Windows-only mirror of doctor-script.test.ts (which is fully skipped on Windows).
 // Exercises the PS1 port's argparse and basic execution. A developer who breaks
@@ -52,7 +63,7 @@ describe.runIf(process.platform === "win32")("ao-doctor.ps1", () => {
 		// must always print a final "Results: ... PASS, ... WARN, ... FAIL" line
 		// and exit either 0 (no FAILs) or 1 (FAILs). This catches a script that
 		// fails to parse or crashes mid-pipeline.
-		const tempRoot = mkdtempSync(join(tmpdir(), "ao-doctor-ps1-"));
+		const tempRoot = makeTempRoot("ao-doctor-ps1-");
 		try {
 			const result = runPwsh([], {
 				AO_REPO_ROOT: tempRoot,

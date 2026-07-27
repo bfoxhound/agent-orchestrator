@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { EventEmitter } from "node:events";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync, realpathSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -25,6 +25,17 @@ import {
 	resolveScriptPath,
 	runRepoScript,
 } from "../../src/lib/script-runner.js";
+
+/**
+ * Create a temp dir whose path is already canonical. On Windows os.tmpdir()
+ * returns an 8.3 short name ("C:\\Users\\RUNNER~1\\..."), while git and
+ * realpath report the long form — so anything comparing the two decides the
+ * paths differ. realpathSync.native expands short names; plain realpathSync
+ * does not.
+ */
+function makeTempRoot(prefix: string): string {
+	return realpathSync.native(mkdtempSync(join(tmpdir(), prefix)));
+}
 
 describe("script-runner", () => {
 	const originalAoRepoRoot = process.env["AO_REPO_ROOT"];
@@ -90,7 +101,7 @@ describe("script-runner", () => {
 	});
 
 	it("rejects an invalid AO_REPO_ROOT override", () => {
-		const tempRoot = mkdtempSync(join(tmpdir(), "script-runner-invalid-"));
+		const tempRoot = makeTempRoot("script-runner-invalid-");
 		process.env["AO_REPO_ROOT"] = tempRoot;
 
 		expect(() => resolveRepoRoot()).toThrowError(
@@ -101,7 +112,7 @@ describe("script-runner", () => {
 	});
 
 	it("accepts a valid AO_REPO_ROOT override for source checkouts", () => {
-		const tempRoot = mkdtempSync(join(tmpdir(), "script-runner-valid-"));
+		const tempRoot = makeTempRoot("script-runner-valid-");
 		mkdirSync(join(tempRoot, ".git"), { recursive: true });
 		mkdirSync(join(tempRoot, "packages", "ao"), { recursive: true });
 		writeFileSync(join(tempRoot, "packages", "ao", "package.json"), JSON.stringify({ name: "@aoagents/ao" }));
@@ -130,7 +141,7 @@ describe("script-runner", () => {
 	it.skipIf(process.platform !== "win32")(
 		"spawns PowerShell with -File and bypass policy when .ps1 sibling exists",
 		async () => {
-			const tempRoot = mkdtempSync(join(tmpdir(), "script-runner-ps-"));
+			const tempRoot = makeTempRoot("script-runner-ps-");
 			mkdirSync(join(tempRoot, ".git"), { recursive: true });
 			mkdirSync(join(tempRoot, "packages", "ao"), { recursive: true });
 			writeFileSync(join(tempRoot, "packages", "ao", "package.json"), JSON.stringify({ name: "@aoagents/ao" }));
@@ -170,7 +181,7 @@ describe("script-runner", () => {
 	// throws at resolveScriptPath because the literal name doesn't ship, so
 	// we assert the error message rather than spawn shape.
 	it.skipIf(process.platform !== "win32")("does not rewrite to .ps1 for scripts that do not end in .sh", async () => {
-		const tempRoot = mkdtempSync(join(tmpdir(), "script-runner-ps-noext-"));
+		const tempRoot = makeTempRoot("script-runner-ps-noext-");
 		mkdirSync(join(tempRoot, ".git"), { recursive: true });
 		mkdirSync(join(tempRoot, "packages", "ao"), { recursive: true });
 		writeFileSync(join(tempRoot, "packages", "ao", "package.json"), JSON.stringify({ name: "@aoagents/ao" }));
@@ -185,7 +196,7 @@ describe("script-runner", () => {
 	});
 
 	it.skipIf(process.platform === "win32")("pins script execution cwd to the resolved install root", async () => {
-		const tempRoot = mkdtempSync(join(tmpdir(), "script-runner-cwd-"));
+		const tempRoot = makeTempRoot("script-runner-cwd-");
 		mkdirSync(join(tempRoot, ".git"), { recursive: true });
 		mkdirSync(join(tempRoot, "packages", "ao"), { recursive: true });
 		writeFileSync(join(tempRoot, "packages", "ao", "package.json"), JSON.stringify({ name: "@aoagents/ao" }));

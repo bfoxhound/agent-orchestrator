@@ -1,9 +1,20 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, rmSync, mkdirSync } from "node:fs";
+import { mkdtempSync, rmSync, mkdirSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { pathsEqual, canonicalCompareKey } from "../../src/lib/path-equality.js";
+
+/**
+ * Create a temp dir whose path is already canonical. On Windows os.tmpdir()
+ * returns an 8.3 short name ("C:\\Users\\RUNNER~1\\..."), while git and
+ * realpath report the long form — so anything comparing the two decides the
+ * paths differ. realpathSync.native expands short names; plain realpathSync
+ * does not.
+ */
+function makeTempRoot(prefix: string): string {
+	return realpathSync.native(mkdtempSync(join(tmpdir(), prefix)));
+}
 
 let tmpDir: string;
 let originalPlatform: PropertyDescriptor | undefined;
@@ -13,7 +24,7 @@ function setPlatform(p: NodeJS.Platform): void {
 }
 
 beforeEach(() => {
-	tmpDir = mkdtempSync(join(tmpdir(), "ao-pathseq-"));
+	tmpDir = makeTempRoot("ao-pathseq-");
 	originalPlatform = Object.getOwnPropertyDescriptor(process, "platform");
 });
 

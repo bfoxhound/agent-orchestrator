@@ -9,11 +9,23 @@ import {
 	symlinkSync,
 	utimesSync,
 	writeFileSync,
+	realpathSync,
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+
+/**
+ * Create a temp dir whose path is already canonical. On Windows os.tmpdir()
+ * returns an 8.3 short name ("C:\\Users\\RUNNER~1\\..."), while git and
+ * realpath report the long form — so anything comparing the two decides the
+ * paths differ. realpathSync.native expands short names; plain realpathSync
+ * does not.
+ */
+function makeTempRoot(prefix: string): string {
+	return realpathSync.native(mkdtempSync(join(tmpdir(), prefix)));
+}
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const scriptPath = join(packageRoot, "src", "assets", "scripts", "ao-doctor.sh");
@@ -81,7 +93,7 @@ function createHealthyPath(binDir: string): void {
 // (Git Bash auto-detection in runRepoScript) is exercised at runtime, not here.
 describe.skipIf(process.platform === "win32")("ao-doctor.sh", () => {
 	it("reports a healthy install as PASS", () => {
-		const tempRoot = mkdtempSync(join(tmpdir(), "ao-doctor-script-"));
+		const tempRoot = makeTempRoot("ao-doctor-script-");
 		const fakeRepo = createHealthyRepo(tempRoot);
 		const binDir = join(tempRoot, "bin");
 		mkdirSync(binDir, { recursive: true });
@@ -112,7 +124,7 @@ describe.skipIf(process.platform === "win32")("ao-doctor.sh", () => {
 	});
 
 	it("applies safe fixes for missing launcher, missing dirs, and stale temp files when grep output is colored", () => {
-		const tempRoot = mkdtempSync(join(tmpdir(), "ao-doctor-fix-"));
+		const tempRoot = makeTempRoot("ao-doctor-fix-");
 		const fakeRepo = createHealthyRepo(tempRoot);
 		const binDir = join(tempRoot, "bin");
 		mkdirSync(binDir, { recursive: true });
@@ -176,7 +188,7 @@ describe.skipIf(process.platform === "win32")("ao-doctor.sh", () => {
 	});
 
 	it("repairs a dangling ao launcher shim in fix mode", () => {
-		const tempRoot = mkdtempSync(join(tmpdir(), "ao-doctor-dangling-launcher-"));
+		const tempRoot = makeTempRoot("ao-doctor-dangling-launcher-");
 		const fakeRepo = createHealthyRepo(tempRoot);
 		const binDir = join(tempRoot, "bin");
 		mkdirSync(binDir, { recursive: true });
@@ -230,7 +242,7 @@ exit 0`,
 	});
 
 	it("reports a healthy packaged install without source-checkout failures", () => {
-		const tempRoot = mkdtempSync(join(tmpdir(), "ao-doctor-package-"));
+		const tempRoot = makeTempRoot("ao-doctor-package-");
 		const fakeInstall = createHealthyPackageInstall(tempRoot);
 		const binDir = join(tempRoot, "bin");
 		mkdirSync(binDir, { recursive: true });

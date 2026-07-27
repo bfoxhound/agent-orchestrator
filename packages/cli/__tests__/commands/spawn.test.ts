@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { recordActivityEvent, type Session, type SessionManager, getProjectBaseDir } from "@aoagents/ao-core";
@@ -82,6 +82,17 @@ const STORAGE_KEY = "111111111113";
 import { Command } from "commander";
 import { registerSpawn, registerBatchSpawn } from "../../src/commands/spawn.js";
 
+/**
+ * Create a temp dir whose path is already canonical. On Windows os.tmpdir()
+ * returns an 8.3 short name ("C:\\Users\\RUNNER~1\\..."), while git and
+ * realpath report the long form — so anything comparing the two decides the
+ * paths differ. realpathSync.native expands short names; plain realpathSync
+ * does not.
+ */
+function makeTempRoot(prefix: string): string {
+	return realpathSync.native(mkdtempSync(join(tmpdir(), prefix)));
+}
+
 let program: Command;
 let consoleSpy: ReturnType<typeof vi.spyOn>;
 
@@ -89,7 +100,7 @@ const recordedEvents = (): Array<Record<string, unknown>> =>
 	vi.mocked(recordActivityEvent).mock.calls.map((c) => c[0] as Record<string, unknown>);
 
 beforeEach(() => {
-	tmpDir = mkdtempSync(join(tmpdir(), "ao-spawn-test-"));
+	tmpDir = makeTempRoot("ao-spawn-test-");
 	configPath = join(tmpDir, "agent-orchestrator.yaml");
 	writeFileSync(configPath, "projects: {}");
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, writeFileSync, rmSync, mkdirSync, existsSync, readdirSync, readFileSync } from "node:fs";
+import { mkdtempSync, writeFileSync, rmSync, mkdirSync, existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
@@ -203,6 +203,17 @@ let sessionsDir: string;
 import { Command } from "commander";
 import { registerStatus } from "../../src/commands/status.js";
 
+/**
+ * Create a temp dir whose path is already canonical. On Windows os.tmpdir()
+ * returns an 8.3 short name ("C:\\Users\\RUNNER~1\\..."), while git and
+ * realpath report the long form — so anything comparing the two decides the
+ * paths differ. realpathSync.native expands short names; plain realpathSync
+ * does not.
+ */
+function makeTempRoot(prefix: string): string {
+	return realpathSync.native(mkdtempSync(join(tmpdir(), prefix)));
+}
+
 let program: Command;
 let consoleSpy: ReturnType<typeof vi.spyOn>;
 let setIntervalSpy: ReturnType<typeof vi.spyOn> | undefined;
@@ -210,7 +221,7 @@ let clearIntervalSpy: ReturnType<typeof vi.spyOn> | undefined;
 let processOnceSpy: ReturnType<typeof vi.spyOn> | undefined;
 
 beforeEach(() => {
-	tmpDir = mkdtempSync(join(tmpdir(), "ao-status-test-"));
+	tmpDir = makeTempRoot("ao-status-test-");
 
 	const configPath = join(tmpDir, "agent-orchestrator.yaml");
 	writeFileSync(configPath, "projects: {}");
