@@ -13,8 +13,8 @@ const REMOTE_REPO_REGEX = /(?:github|gitlab)\.com[:/](.+?)(?:\.git)?$/;
  * Returns null if the remote doesn't match a known host (github.com, gitlab.com).
  */
 export function extractOwnerRepo(gitRemote: string): string | null {
-  const match = gitRemote.match(REMOTE_REPO_REGEX);
-  return match ? match[1] : null;
+	const match = gitRemote.match(REMOTE_REPO_REGEX);
+	return match ? match[1] : null;
 }
 
 /**
@@ -25,5 +25,5 @@ export function extractOwnerRepo(gitRemote: string): string | null {
 export const REPO_VALIDATION_REGEX = /^[^\s/]+(?:\/[^\s/]+)+$/;
 
 export function isValidRepoString(value: string): boolean {
-  return REPO_VALIDATION_REGEX.test(value);
+	return REPO_VALIDATION_REGEX.test(value);
 }

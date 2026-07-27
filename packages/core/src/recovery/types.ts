@@ -31,207 +31,207 @@ export type RecoveryAction = "recover" | "cleanup" | "escalate" | "skip";
  * Assessment of a session's state for recovery purposes.
  */
 export interface RecoveryAssessment {
-  /** Session ID being assessed */
-  sessionId: SessionId;
+	/** Session ID being assessed */
+	sessionId: SessionId;
 
-  /** Project ID this session belongs to */
-  projectId: string;
+	/** Project ID this session belongs to */
+	projectId: string;
 
-  /** Overall classification */
-  classification: RecoveryClassification;
+	/** Overall classification */
+	classification: RecoveryClassification;
 
-  /** Recommended action */
-  action: RecoveryAction;
+	/** Recommended action */
+	action: RecoveryAction;
 
-  /** Human-readable reason for classification */
-  reason: string;
+	/** Human-readable reason for classification */
+	reason: string;
 
-  /** Whether the runtime probe itself succeeded */
-  runtimeProbeSucceeded: boolean;
+	/** Whether the runtime probe itself succeeded */
+	runtimeProbeSucceeded: boolean;
 
-  /** Whether the process probe itself succeeded */
-  processProbeSucceeded: boolean;
+	/** Whether the process probe itself succeeded */
+	processProbeSucceeded: boolean;
 
-  /** Whether the signals disagree strongly enough to block cleanup */
-  signalDisagreement: boolean;
+	/** Whether the signals disagree strongly enough to block cleanup */
+	signalDisagreement: boolean;
 
-  /** Whether recovery can proceed automatically, needs a human, or should be skipped */
-  recoveryRule: "auto" | "human" | "skip";
+	/** Whether recovery can proceed automatically, needs a human, or should be skipped */
+	recoveryRule: "auto" | "human" | "skip";
 
-  // --- Runtime state ---
+	// --- Runtime state ---
 
-  /** Whether the runtime (tmux/docker) is alive */
-  runtimeAlive: boolean;
+	/** Whether the runtime (tmux/docker) is alive */
+	runtimeAlive: boolean;
 
-  /** Runtime handle if available */
-  runtimeHandle: RuntimeHandle | null;
+	/** Runtime handle if available */
+	runtimeHandle: RuntimeHandle | null;
 
-  // --- Workspace state ---
+	// --- Workspace state ---
 
-  /** Whether the workspace directory exists */
-  workspaceExists: boolean;
+	/** Whether the workspace directory exists */
+	workspaceExists: boolean;
 
-  /** Workspace path if known */
-  workspacePath: string | null;
+	/** Workspace path if known */
+	workspacePath: string | null;
 
-  // --- Agent state ---
+	// --- Agent state ---
 
-  /** Whether the agent process appears to be running */
-  agentProcessRunning: boolean;
+	/** Whether the agent process appears to be running */
+	agentProcessRunning: boolean;
 
-  /** Detected agent activity state */
-  agentActivity: ActivityState | null;
+	/** Detected agent activity state */
+	agentActivity: ActivityState | null;
 
-  // --- Metadata state ---
+	// --- Metadata state ---
 
-  /** Whether metadata file is valid/readable */
-  metadataValid: boolean;
+	/** Whether metadata file is valid/readable */
+	metadataValid: boolean;
 
-  /** Current status from metadata */
-  metadataStatus: SessionStatus;
+	/** Current status from metadata */
+	metadataStatus: SessionStatus;
 
-  /** Raw metadata key-value pairs */
-  rawMetadata: Record<string, string>;
+	/** Raw metadata key-value pairs */
+	rawMetadata: Record<string, string>;
 }
 
 /**
  * Result of attempting to recover a single session.
  */
 export interface RecoveryResult {
-  /** Whether the operation succeeded */
-  success: boolean;
+	/** Whether the operation succeeded */
+	success: boolean;
 
-  /** Session ID that was processed */
-  sessionId: SessionId;
+	/** Session ID that was processed */
+	sessionId: SessionId;
 
-  /** Action that was taken */
-  action: RecoveryAction;
+	/** Action that was taken */
+	action: RecoveryAction;
 
-  /** Recovered session object (only for 'recover' action) */
-  session?: Session;
+	/** Recovered session object (only for 'recover' action) */
+	session?: Session;
 
-  /** Whether manual intervention is required */
-  requiresManualIntervention?: boolean;
+	/** Whether manual intervention is required */
+	requiresManualIntervention?: boolean;
 
-  reason?: string;
+	reason?: string;
 
-  /** Error message if operation failed */
-  error?: string;
+	/** Error message if operation failed */
+	error?: string;
 }
 
 /**
  * Summary report of a recovery operation.
  */
 export interface RecoveryReport {
-  /** When the recovery was run */
-  timestamp: Date;
+	/** When the recovery was run */
+	timestamp: Date;
 
-  /** Total sessions scanned */
-  totalScanned: number;
+	/** Total sessions scanned */
+	totalScanned: number;
 
-  /** Sessions that were recovered (live, restored to memory) */
-  recovered: SessionId[];
+	/** Sessions that were recovered (live, restored to memory) */
+	recovered: SessionId[];
 
-  /** Sessions that were cleaned up (dead, resources removed) */
-  cleanedUp: SessionId[];
+	/** Sessions that were cleaned up (dead, resources removed) */
+	cleanedUp: SessionId[];
 
-  /** Sessions that require manual intervention */
-  escalated: SessionId[];
+	/** Sessions that require manual intervention */
+	escalated: SessionId[];
 
-  /** Sessions that were skipped (no action needed) */
-  skipped: SessionId[];
+	/** Sessions that were skipped (no action needed) */
+	skipped: SessionId[];
 
-  /** Errors encountered during recovery */
-  errors: Array<{ sessionId: SessionId; error: string }>;
+	/** Errors encountered during recovery */
+	errors: Array<{ sessionId: SessionId; error: string }>;
 
-  /** Time taken for recovery in milliseconds */
-  durationMs: number;
+	/** Time taken for recovery in milliseconds */
+	durationMs: number;
 }
 
 /**
  * Entry in the recovery log.
  */
 export interface RecoveryLogEntry {
-  /** ISO timestamp */
-  timestamp: string;
+	/** ISO timestamp */
+	timestamp: string;
 
-  /** Session ID */
-  sessionId: SessionId;
+	/** Session ID */
+	sessionId: SessionId;
 
-  /** Action taken */
-  action: "recovered" | "cleaned_up" | "escalated" | "skipped" | "error";
+	/** Action taken */
+	action: "recovered" | "cleaned_up" | "escalated" | "skipped" | "error";
 
-  /** Previous status (for recovered sessions) */
-  previousStatus?: SessionStatus;
+	/** Previous status (for recovered sessions) */
+	previousStatus?: SessionStatus;
 
-  /** Reason for action (for cleanup/escalate) */
-  reason?: string;
+	/** Reason for action (for cleanup/escalate) */
+	reason?: string;
 
-  /** Error message (for error action) */
-  error?: string;
+	/** Error message (for error action) */
+	error?: string;
 
-  /** Additional details */
-  details?: Record<string, unknown>;
+	/** Additional details */
+	details?: Record<string, unknown>;
 }
 
 /**
  * Configuration for recovery behavior.
  */
 export interface RecoveryConfig {
-  /** Enable automatic recovery on orchestrator startup */
-  enabled: boolean;
+	/** Enable automatic recovery on orchestrator startup */
+	enabled: boolean;
 
-  /** Maximum time for recovery phase in milliseconds */
-  timeoutMs: number;
+	/** Maximum time for recovery phase in milliseconds */
+	timeoutMs: number;
 
-  /** Number of concurrent validation tasks */
-  parallelValidation: number;
+	/** Number of concurrent validation tasks */
+	parallelValidation: number;
 
-  /** Path to recovery log file */
-  logPath: string;
+	/** Path to recovery log file */
+	logPath: string;
 
-  /** Automatically cleanup dead sessions */
-  autoCleanup: boolean;
+	/** Automatically cleanup dead sessions */
+	autoCleanup: boolean;
 
-  /** Escalate partial sessions (vs. auto-cleanup) */
-  escalatePartial: boolean;
+	/** Escalate partial sessions (vs. auto-cleanup) */
+	escalatePartial: boolean;
 
-  /** Maximum recovery attempts before escalating */
-  maxRecoveryAttempts: number;
+	/** Maximum recovery attempts before escalating */
+	maxRecoveryAttempts: number;
 }
 
 /**
  * Default recovery configuration.
  */
 export const DEFAULT_RECOVERY_CONFIG: RecoveryConfig = {
-  enabled: true,
-  timeoutMs: 30_000,
-  parallelValidation: 5,
-  logPath: "", // Will be set to ~/.agent-orchestrator/recovery.log
-  autoCleanup: true,
-  escalatePartial: true,
-  maxRecoveryAttempts: 3,
+	enabled: true,
+	timeoutMs: 30_000,
+	parallelValidation: 5,
+	logPath: "", // Will be set to ~/.agent-orchestrator/recovery.log
+	autoCleanup: true,
+	escalatePartial: true,
+	maxRecoveryAttempts: 3,
 };
 
 /**
  * Context passed to recovery functions.
  */
 export interface RecoveryContext {
-  /** Root config path for the orchestrator */
-  configPath: string;
+	/** Root config path for the orchestrator */
+	configPath: string;
 
-  /** Recovery configuration */
-  recoveryConfig: RecoveryConfig;
+	/** Recovery configuration */
+	recoveryConfig: RecoveryConfig;
 
-  /** Whether this is a dry run (no actual changes) */
-  dryRun: boolean;
+	/** Whether this is a dry run (no actual changes) */
+	dryRun: boolean;
 
-  /**
-   * Invoked after every metadata mutation performed by recovery actions
-   * (recover/cleanup/escalate). Callers that rely on SessionManager's
-   * listCached() cache should pass `sessionManager.invalidateCache` here
-   * so the dashboard sees recovery results immediately instead of waiting
-   * for the 35s TTL. Optional — omitted callers get a no-op.
-   */
-  invalidateCache?: () => void;
+	/**
+	 * Invoked after every metadata mutation performed by recovery actions
+	 * (recover/cleanup/escalate). Callers that rely on SessionManager's
+	 * listCached() cache should pass `sessionManager.invalidateCache` here
+	 * so the dashboard sees recovery results immediately instead of waiting
+	 * for the 35s TTL. Optional — omitted callers get a no-op.
+	 */
+	invalidateCache?: () => void;
 }

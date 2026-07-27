@@ -4,8 +4,10 @@ description: Deliver notifications through a local OpenClaw gateway — personal
 ---
 
 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", margin: "0.5rem 0 1.25rem" }}>
-  <Logo name="openclaw" size={28} />
-  <span style={{ fontSize: "0.8125rem", color: "var(--color-fd-muted-foreground)" }}>Slot: <code>notifier</code> · Name: <code>openclaw</code></span>
+	<Logo name="openclaw" size={28} />
+	<span style={{ fontSize: "0.8125rem", color: "var(--color-fd-muted-foreground)" }}>
+		Slot: <code>notifier</code> · Name: <code>openclaw</code>
+	</span>
 </div>
 
 <PlatformSupport macos="full" linux="full" windows="full" />
@@ -41,23 +43,23 @@ notifier:
   - type: openclaw
     url: http://127.0.0.1:18789/hooks/agent
     token: ${OPENCLAW_HOOKS_TOKEN}
-    wakeMode: next-heartbeat       # or `now`
+    wakeMode: next-heartbeat # or `now`
 ```
 
 ## Config
 
-| Key | Default | What it does |
-|---|---|---|
-| `url` | `http://127.0.0.1:18789/hooks/agent` | OpenClaw hook endpoint |
-| `token` | — | Auth token. Use `${ENV_VAR}` — never commit the raw value |
-| `name` | — | Identifier shown in OpenClaw |
-| `sessionKeyPrefix` | — | Prefix for OpenClaw session keys |
-| `wakeMode` | `next-heartbeat` | `now` = deliver immediately, `next-heartbeat` = batch on next OpenClaw tick |
-| `deliver` | `true` | Disable to record-only without waking the user |
-| `retries` | `3` | Retry count on transient failures |
-| `retryDelayMs` | `1000` | Base retry delay |
-| `healthSummaryPath` | — | Optional local path where OpenClaw writes a summary AO can pick up |
-| `configPath` | `~/.openclaw/openclaw.json` | Override OpenClaw config location |
+| Key                 | Default                              | What it does                                                                |
+| ------------------- | ------------------------------------ | --------------------------------------------------------------------------- |
+| `url`               | `http://127.0.0.1:18789/hooks/agent` | OpenClaw hook endpoint                                                      |
+| `token`             | —                                    | Auth token. Use `${ENV_VAR}` — never commit the raw value                   |
+| `name`              | —                                    | Identifier shown in OpenClaw                                                |
+| `sessionKeyPrefix`  | —                                    | Prefix for OpenClaw session keys                                            |
+| `wakeMode`          | `next-heartbeat`                     | `now` = deliver immediately, `next-heartbeat` = batch on next OpenClaw tick |
+| `deliver`           | `true`                               | Disable to record-only without waking the user                              |
+| `retries`           | `3`                                  | Retry count on transient failures                                           |
+| `retryDelayMs`      | `1000`                               | Base retry delay                                                            |
+| `healthSummaryPath` | —                                    | Optional local path where OpenClaw writes a summary AO can pick up          |
+| `configPath`        | `~/.openclaw/openclaw.json`          | Override OpenClaw config location                                           |
 
 ## Token precedence
 

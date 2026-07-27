@@ -62,14 +62,14 @@ Real-time updates
 
 ```typescript
 {
-  type: "snapshot";
-  sessions: Array<{
-    id: string;
-    status: SessionStatus;
-    activity: ActivityState | null;
-    attentionLevel: AttentionLevel;
-    lastActivityAt: string;
-  }>; // ALL sessions, unfiltered
+	type: "snapshot";
+	sessions: Array<{
+		id: string;
+		status: SessionStatus;
+		activity: ActivityState | null;
+		attentionLevel: AttentionLevel;
+		lastActivityAt: string;
+	}>; // ALL sessions, unfiltered
 }
 ```
 
@@ -138,10 +138,10 @@ Real-time updates (project-scoped)
 
 ```typescript
 interface SessionsQueryParams {
-  /** Optional project filter. If omitted, returns all sessions. */
-  project?: string;
-  /** Existing: filter to non-exited sessions only */
-  active?: "true" | "false";
+	/** Optional project filter. If omitted, returns all sessions. */
+	project?: string;
+	/** Existing: filter to non-exited sessions only */
+	active?: "true" | "false";
 }
 ```
 
@@ -149,9 +149,9 @@ interface SessionsQueryParams {
 
 ```typescript
 interface SessionsResponse {
-  sessions: DashboardSession[]; // Filtered by project if param provided
-  stats: DashboardStats; // Stats reflect filtered sessions only
-  orchestratorId: string | null; // Orchestrator for the project (if scoped)
+	sessions: DashboardSession[]; // Filtered by project if param provided
+	stats: DashboardStats; // Stats reflect filtered sessions only
+	orchestratorId: string | null; // Orchestrator for the project (if scoped)
 }
 ```
 
@@ -169,14 +169,14 @@ interface SessionsResponse {
 
 ```typescript
 function matchesProject(session: Session, projectId: string, config: OrchestratorConfig): boolean {
-  // Direct match
-  if (session.projectId === projectId) return true;
+	// Direct match
+	if (session.projectId === projectId) return true;
 
-  // Prefix match (existing behavior in resolveProject)
-  const project = config.projects[projectId];
-  if (project?.sessionPrefix && session.id.startsWith(project.sessionPrefix)) return true;
+	// Prefix match (existing behavior in resolveProject)
+	const project = config.projects[projectId];
+	if (project?.sessionPrefix && session.id.startsWith(project.sessionPrefix)) return true;
 
-  return false;
+	return false;
 }
 ```
 
@@ -186,8 +186,8 @@ function matchesProject(session: Session, projectId: string, config: Orchestrato
 
 ```typescript
 interface EventsQueryParams {
-  /** Optional project filter. If omitted, streams all sessions. */
-  project?: string;
+	/** Optional project filter. If omitted, streams all sessions. */
+	project?: string;
 }
 ```
 
@@ -195,14 +195,14 @@ interface EventsQueryParams {
 
 ```typescript
 interface SSESnapshotEvent {
-  type: "snapshot";
-  sessions: Array<{
-    id: string;
-    status: SessionStatus;
-    activity: ActivityState | null;
-    attentionLevel: AttentionLevel;
-    lastActivityAt: string;
-  }>; // Filtered by project if param provided
+	type: "snapshot";
+	sessions: Array<{
+		id: string;
+		status: SessionStatus;
+		activity: ActivityState | null;
+		attentionLevel: AttentionLevel;
+		lastActivityAt: string;
+	}>; // Filtered by project if param provided
 }
 ```
 
@@ -224,9 +224,9 @@ interface SSESnapshotEvent {
 
 ```typescript
 export default async function Home() {
-  const { sessionManager } = await getServices();
-  const allSessions = await sessionManager.list();
-  // ...
+	const { sessionManager } = await getServices();
+	const allSessions = await sessionManager.list();
+	// ...
 }
 ```
 
@@ -257,25 +257,22 @@ export default async function Home({ searchParams }: { searchParams: { project?:
 
 ```typescript
 export function useSessionEvents(initialSessions: DashboardSession[]): DashboardSession[] {
-  useEffect(() => {
-    const es = new EventSource("/api/events");
-    // ...
-  }, []);
+	useEffect(() => {
+		const es = new EventSource("/api/events");
+		// ...
+	}, []);
 }
 ```
 
 **Target:**
 
 ```typescript
-export function useSessionEvents(
-  initialSessions: DashboardSession[],
-  project?: string,
-): DashboardSession[] {
-  useEffect(() => {
-    const url = project ? `/api/events?project=${encodeURIComponent(project)}` : "/api/events";
-    const es = new EventSource(url);
-    // ...
-  }, [project]);
+export function useSessionEvents(initialSessions: DashboardSession[], project?: string): DashboardSession[] {
+	useEffect(() => {
+		const url = project ? `/api/events?project=${encodeURIComponent(project)}` : "/api/events";
+		const es = new EventSource(url);
+		// ...
+	}, [project]);
 }
 ```
 
@@ -285,8 +282,8 @@ export function useSessionEvents(
 
 ```typescript
 export function Dashboard({ initialSessions, stats, orchestratorId, projectName }: DashboardProps) {
-  const sessions = useSessionEvents(initialSessions);
-  // ...
+	const sessions = useSessionEvents(initialSessions);
+	// ...
 }
 ```
 
@@ -294,8 +291,8 @@ export function Dashboard({ initialSessions, stats, orchestratorId, projectName 
 
 ```typescript
 export function Dashboard({ initialSessions, stats, orchestratorId, projectName }: DashboardProps) {
-  const sessions = useSessionEvents(initialSessions, projectName);
-  // ...
+	const sessions = useSessionEvents(initialSessions, projectName);
+	// ...
 }
 ```
 

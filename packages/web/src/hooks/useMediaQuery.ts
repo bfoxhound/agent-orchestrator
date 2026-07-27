@@ -7,10 +7,10 @@ import { useEffect, useState } from "react";
  * e.g. toQuery(767) => "(max-width: 767px)"
  */
 function toQuery(queryOrBreakpoint: string | number): string {
-  if (typeof queryOrBreakpoint === "number") {
-    return `(max-width: ${queryOrBreakpoint}px)`;
-  }
-  return queryOrBreakpoint;
+	if (typeof queryOrBreakpoint === "number") {
+		return `(max-width: ${queryOrBreakpoint}px)`;
+	}
+	return queryOrBreakpoint;
 }
 
 /** Mobile breakpoint: viewport widths ≤ this value are treated as mobile. */
@@ -31,36 +31,36 @@ export const MOBILE_BREAKPOINT = 767;
  * const isCustom = useMediaQuery('(max-width: 767px)') // raw query string
  */
 export function useMediaQuery(queryOrBreakpoint: string | number): boolean {
-  const query = toQuery(queryOrBreakpoint);
+	const query = toQuery(queryOrBreakpoint);
 
-  const [matches, setMatches] = useState(false);
+	const [matches, setMatches] = useState(false);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+	useEffect(() => {
+		if (typeof window === "undefined") return;
 
-    const mediaQueryList = window.matchMedia(query);
+		const mediaQueryList = window.matchMedia(query);
 
-    // Sync state in case the query string changed between renders.
-    setMatches(mediaQueryList.matches);
+		// Sync state in case the query string changed between renders.
+		setMatches(mediaQueryList.matches);
 
-    const listener = (event: MediaQueryListEvent) => {
-      setMatches(event.matches);
-    };
+		const listener = (event: MediaQueryListEvent) => {
+			setMatches(event.matches);
+		};
 
-    if (typeof mediaQueryList.addEventListener === "function") {
-      mediaQueryList.addEventListener("change", listener);
+		if (typeof mediaQueryList.addEventListener === "function") {
+			mediaQueryList.addEventListener("change", listener);
 
-      return () => {
-        mediaQueryList.removeEventListener("change", listener);
-      };
-    }
+			return () => {
+				mediaQueryList.removeEventListener("change", listener);
+			};
+		}
 
-    mediaQueryList.addListener(listener);
+		mediaQueryList.addListener(listener);
 
-    return () => {
-      mediaQueryList.removeListener(listener);
-    };
-  }, [query]);
+		return () => {
+			mediaQueryList.removeListener(listener);
+		};
+	}, [query]);
 
-  return matches;
+	return matches;
 }

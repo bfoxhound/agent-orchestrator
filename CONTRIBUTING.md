@@ -76,10 +76,10 @@ AO uses a **two-stage release pipeline**. This public repo handles version bumps
 
 ### Where things happen
 
-| Stage                    | Where                          | Responsibility                                                           |
-| ------------------------ | ------------------------------ | ------------------------------------------------------------------------ |
-| Versioning + GitHub release | This repo (public, CI)      | Changesets version bumps, git tags, `gh release create`                  |
-| npm publish              | Private server (AO cron)       | Detects new GitHub releases → builds → `pnpm changeset publish`         |
+| Stage                       | Where                    | Responsibility                                                  |
+| --------------------------- | ------------------------ | --------------------------------------------------------------- |
+| Versioning + GitHub release | This repo (public, CI)   | Changesets version bumps, git tags, `gh release create`         |
+| npm publish                 | Private server (AO cron) | Detects new GitHub releases → builds → `pnpm changeset publish` |
 
 The flow on every release:
 
@@ -163,19 +163,19 @@ cd packages/plugins/runtime-myplugin
 
 ```json
 {
-  "name": "@aoagents/ao-runtime-myplugin",
-  "version": "0.1.0",
-  "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "tsc",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest"
-  },
-  "dependencies": {
-    "@aoagents/ao-core": "workspace:*"
-  }
+	"name": "@aoagents/ao-runtime-myplugin",
+	"version": "0.1.0",
+	"type": "module",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"build": "tsc",
+		"typecheck": "tsc --noEmit",
+		"test": "vitest"
+	},
+	"dependencies": {
+		"@aoagents/ao-core": "workspace:*"
+	}
 }
 ```
 
@@ -188,28 +188,28 @@ cd packages/plugins/runtime-myplugin
 import type { PluginModule, Runtime } from "@aoagents/ao-core";
 
 export const manifest = {
-  name: "myplugin",
-  slot: "runtime" as const,
-  description: "My custom runtime",
-  version: "0.1.0",
+	name: "myplugin",
+	slot: "runtime" as const,
+	description: "My custom runtime",
+	version: "0.1.0",
 };
 
 export function create(): Runtime {
-  return {
-    name: "myplugin",
-    async create(config) {
-      /* start session */
-    },
-    async destroy(sessionName) {
-      /* tear down */
-    },
-    async send(sessionName, text) {
-      /* send input */
-    },
-    async isRunning(sessionName) {
-      return false;
-    },
-  };
+	return {
+		name: "myplugin",
+		async create(config) {
+			/* start session */
+		},
+		async destroy(sessionName) {
+			/* tear down */
+		},
+		async send(sessionName, text) {
+			/* send input */
+		},
+		async isRunning(sessionName) {
+			return false;
+		},
+	};
 }
 
 export default { manifest, create } satisfies PluginModule<Runtime>;
@@ -233,10 +233,10 @@ import { describe, it, expect } from "vitest";
 import { create } from "./index.js";
 
 describe("myplugin runtime", () => {
-  it("reports not running for unknown session", async () => {
-    const runtime = create();
-    expect(await runtime.isRunning("unknown-session")).toBe(false);
-  });
+	it("reports not running for unknown session", async () => {
+		const runtime = create();
+		expect(await runtime.isRunning("unknown-session")).toBe(false);
+	});
 });
 ```
 

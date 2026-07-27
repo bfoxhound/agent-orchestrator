@@ -16,13 +16,13 @@ Creates isolated tmux sessions for each agent. Each session runs in a separate t
 
 ```typescript
 const handle = await runtime.create({
-  sessionId: "my-app-3",
-  workspacePath: "/Users/dev/.worktrees/my-app/my-app-3",
-  launchCommand: "claude -p 'Fix bug in auth module'",
-  environment: {
-    AO_SESSION_ID: "my-app-3",
-    AO_PROJECT_ID: "my-app",
-  },
+	sessionId: "my-app-3",
+	workspacePath: "/Users/dev/.worktrees/my-app/my-app-3",
+	launchCommand: "claude -p 'Fix bug in auth module'",
+	environment: {
+		AO_SESSION_ID: "my-app-3",
+		AO_PROJECT_ID: "my-app",
+	},
 });
 ```
 

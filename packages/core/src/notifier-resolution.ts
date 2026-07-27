@@ -1,8 +1,8 @@
 import type { OrchestratorConfig } from "./types.js";
 
 export interface ResolvedNotifierTarget {
-  reference: string;
-  pluginName: string;
+	reference: string;
+	pluginName: string;
 }
 
 /**
@@ -12,20 +12,17 @@ export interface ResolvedNotifierTarget {
  * (`alerts`) or a raw plugin name (`slack`). Built-in registry lookups
  * use the plugin name, so alias-based references must be resolved first.
  */
-export function resolveNotifierTarget(
-  config: OrchestratorConfig,
-  reference: string,
-): ResolvedNotifierTarget {
-  const configured = config.notifiers?.[reference];
-  if (configured?.plugin) {
-    return {
-      reference,
-      pluginName: configured.plugin,
-    };
-  }
+export function resolveNotifierTarget(config: OrchestratorConfig, reference: string): ResolvedNotifierTarget {
+	const configured = config.notifiers?.[reference];
+	if (configured?.plugin) {
+		return {
+			reference,
+			pluginName: configured.plugin,
+		};
+	}
 
-  return {
-    reference,
-    pluginName: reference,
-  };
+	return {
+		reference,
+		pluginName: reference,
+	};
 }

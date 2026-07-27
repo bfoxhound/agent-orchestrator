@@ -113,26 +113,26 @@ On Unix this is the tmux session name. On Windows (where the default runtime is 
 
 ```typescript
 function generateSessionPrefix(projectId: string): string {
-  if (projectId.length <= 4) return projectId.toLowerCase();
+	if (projectId.length <= 4) return projectId.toLowerCase();
 
-  // CamelCase: PyTorch → pt
-  const uppercase = projectId.match(/[A-Z]/g);
-  if (uppercase?.length > 1) {
-    return uppercase.join("").toLowerCase();
-  }
+	// CamelCase: PyTorch → pt
+	const uppercase = projectId.match(/[A-Z]/g);
+	if (uppercase?.length > 1) {
+		return uppercase.join("").toLowerCase();
+	}
 
-  // kebab-case: agent-orchestrator → ao
-  if (projectId.includes("-") || projectId.includes("_")) {
-    const sep = projectId.includes("-") ? "-" : "_";
-    return projectId
-      .split(sep)
-      .map((w) => w[0])
-      .join("")
-      .toLowerCase();
-  }
+	// kebab-case: agent-orchestrator → ao
+	if (projectId.includes("-") || projectId.includes("_")) {
+		const sep = projectId.includes("-") ? "-" : "_";
+		return projectId
+			.split(sep)
+			.map((w) => w[0])
+			.join("")
+			.toLowerCase();
+	}
 
-  // Single word: integrator → int
-  return projectId.slice(0, 3).toLowerCase();
+	// Single word: integrator → int
+	return projectId.slice(0, 3).toLowerCase();
 }
 ```
 

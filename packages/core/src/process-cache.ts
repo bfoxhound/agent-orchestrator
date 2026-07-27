@@ -30,15 +30,15 @@
 const cache = new Map<string, Promise<unknown>>();
 
 export function memoizeAsync<T>(key: string, fn: () => Promise<T>): Promise<T> {
-  let cached = cache.get(key);
-  if (!cached) {
-    cached = fn();
-    cache.set(key, cached);
-  }
-  return cached as Promise<T>;
+	let cached = cache.get(key);
+	if (!cached) {
+		cached = fn();
+		cache.set(key, cached);
+	}
+	return cached as Promise<T>;
 }
 
 /** Test-only — clears the process cache. */
 export function _clearProcessCacheForTests(): void {
-  cache.clear();
+	cache.clear();
 }

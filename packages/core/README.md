@@ -167,12 +167,12 @@ const reportsDir = getFeedbackReportsDir(configPath, projectPath);
 const store = new FeedbackReportStore(reportsDir);
 
 const saved = store.persist(FEEDBACK_TOOL_NAMES.BUG_REPORT, {
-  title: "SSO login loop",
-  body: "Google SSO redirects back to /login repeatedly.",
-  evidence: ["trace_id=abc123", "screenshot: login-loop.png"],
-  session: "ao-22",
-  source: "agent",
-  confidence: 0.84,
+	title: "SSO login loop",
+	body: "Google SSO redirects back to /login repeatedly.",
+	evidence: ["trace_id=abc123", "screenshot: login-loop.png"],
+	session: "ao-22",
+	source: "agent",
+	confidence: 0.84,
 });
 ```
 

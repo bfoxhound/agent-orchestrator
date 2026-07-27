@@ -18,12 +18,10 @@ import { isInstalledUnderNodeModules } from "./dashboard-rebuild.js";
  * Throws if the port is already in use.
  */
 async function checkPort(port: number): Promise<void> {
-  const free = await isPortAvailable(port);
-  if (!free) {
-    throw new Error(
-      `Port ${port} is already in use. Free it or change 'port' in agent-orchestrator.yaml.`,
-    );
-  }
+	const free = await isPortAvailable(port);
+	if (!free) {
+		throw new Error(`Port ${port} is already in use. Free it or change 'port' in agent-orchestrator.yaml.`);
+	}
 }
 
 /**
@@ -33,30 +31,24 @@ async function checkPort(port: number): Promise<void> {
  * installs (hoisted to a parent node_modules).
  */
 async function checkBuilt(webDir: string): Promise<void> {
-  const isNpmInstall = isInstalledUnderNodeModules(webDir);
-  const corePkgDir = findPackageUp(webDir, "@aoagents", "ao-core");
-  if (!corePkgDir) {
-    const hint = isNpmInstall
-      ? "Run: npm install -g @aoagents/ao@latest"
-      : "Run: pnpm install && pnpm build";
-    throw new Error(`Dependencies not installed. ${hint}`);
-  }
-  const coreEntry = resolve(corePkgDir, "dist", "index.js");
-  if (!existsSync(coreEntry)) {
-    const hint = isNpmInstall
-      ? "Run: npm install -g @aoagents/ao@latest"
-      : "Run: pnpm build";
-    throw new Error(`Packages not built. ${hint}`);
-  }
+	const isNpmInstall = isInstalledUnderNodeModules(webDir);
+	const corePkgDir = findPackageUp(webDir, "@aoagents", "ao-core");
+	if (!corePkgDir) {
+		const hint = isNpmInstall ? "Run: npm install -g @aoagents/ao@latest" : "Run: pnpm install && pnpm build";
+		throw new Error(`Dependencies not installed. ${hint}`);
+	}
+	const coreEntry = resolve(corePkgDir, "dist", "index.js");
+	if (!existsSync(coreEntry)) {
+		const hint = isNpmInstall ? "Run: npm install -g @aoagents/ao@latest" : "Run: pnpm build";
+		throw new Error(`Packages not built. ${hint}`);
+	}
 
-  const webBuildId = resolve(webDir, ".next", "BUILD_ID");
-  const startAllEntry = resolve(webDir, "dist-server", "start-all.js");
-  if (!existsSync(webBuildId) || !existsSync(startAllEntry)) {
-    const hint = isNpmInstall
-      ? "Run: npm install -g @aoagents/ao@latest"
-      : "Run: pnpm build";
-    throw new Error(`Packages not built. ${hint}`);
-  }
+	const webBuildId = resolve(webDir, ".next", "BUILD_ID");
+	const startAllEntry = resolve(webDir, "dist-server", "start-all.js");
+	if (!existsSync(webBuildId) || !existsSync(startAllEntry)) {
+		const hint = isNpmInstall ? "Run: npm install -g @aoagents/ao@latest" : "Run: pnpm build";
+		throw new Error(`Packages not built. ${hint}`);
+	}
 }
 
 /**
@@ -65,18 +57,18 @@ async function checkBuilt(webDir: string): Promise<void> {
  * the package is found or the filesystem root is reached.
  */
 function findPackageUp(startDir: string, ...segments: string[]): string | null {
-  let dir = resolve(startDir);
-  while (true) {
-    const candidate = resolve(dir, "node_modules", ...segments);
-    if (existsSync(candidate)) return candidate;
-    const parent = dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-  return null;
+	let dir = resolve(startDir);
+	while (true) {
+		const candidate = resolve(dir, "node_modules", ...segments);
+		if (existsSync(candidate)) return candidate;
+		const parent = dirname(dir);
+		if (parent === dir) break;
+		dir = parent;
+	}
+	return null;
 }
 
 export const preflight = {
-  checkPort,
-  checkBuilt,
+	checkPort,
+	checkBuilt,
 };

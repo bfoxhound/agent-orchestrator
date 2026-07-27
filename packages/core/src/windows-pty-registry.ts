@@ -24,57 +24,57 @@ import { join } from "node:path";
 import { atomicWriteFileSync } from "./atomic-write.js";
 
 export interface WindowsPtyHostEntry {
-  sessionId: string;
-  ptyHostPid: number;
-  pipePath: string;
-  registeredAt: string;
+	sessionId: string;
+	ptyHostPid: number;
+	pipePath: string;
+	registeredAt: string;
 }
 
 // Resolved lazily so tests that mock node:os (vitest mock factories run after
 // module evaluation) can override `homedir()` before the first read/write.
 function getRegistryFile(): string {
-  return join(homedir(), ".agent-orchestrator", "windows-pty-hosts.json");
+	return join(homedir(), ".agent-orchestrator", "windows-pty-hosts.json");
 }
 
 function readRaw(): WindowsPtyHostEntry[] {
-  const file = getRegistryFile();
-  if (!existsSync(file)) return [];
-  try {
-    const parsed = JSON.parse(readFileSync(file, "utf-8")) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (e): e is WindowsPtyHostEntry =>
-        typeof e === "object" &&
-        e !== null &&
-        typeof (e as WindowsPtyHostEntry).sessionId === "string" &&
-        typeof (e as WindowsPtyHostEntry).ptyHostPid === "number" &&
-        typeof (e as WindowsPtyHostEntry).pipePath === "string",
-    );
-  } catch {
-    return [];
-  }
+	const file = getRegistryFile();
+	if (!existsSync(file)) return [];
+	try {
+		const parsed = JSON.parse(readFileSync(file, "utf-8")) as unknown;
+		if (!Array.isArray(parsed)) return [];
+		return parsed.filter(
+			(e): e is WindowsPtyHostEntry =>
+				typeof e === "object" &&
+				e !== null &&
+				typeof (e as WindowsPtyHostEntry).sessionId === "string" &&
+				typeof (e as WindowsPtyHostEntry).ptyHostPid === "number" &&
+				typeof (e as WindowsPtyHostEntry).pipePath === "string",
+		);
+	} catch {
+		return [];
+	}
 }
 
 function writeRaw(entries: WindowsPtyHostEntry[]): void {
-  const file = getRegistryFile();
-  if (entries.length === 0) {
-    try {
-      unlinkSync(file);
-    } catch {
-      /* file may not exist */
-    }
-    return;
-  }
-  atomicWriteFileSync(file, JSON.stringify(entries, null, 2));
+	const file = getRegistryFile();
+	if (entries.length === 0) {
+		try {
+			unlinkSync(file);
+		} catch {
+			/* file may not exist */
+		}
+		return;
+	}
+	atomicWriteFileSync(file, JSON.stringify(entries, null, 2));
 }
 
 function isAlive(pid: number): boolean {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (err: unknown) {
-    return (err as { code?: string }).code === "EPERM";
-  }
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch (err: unknown) {
+		return (err as { code?: string }).code === "EPERM";
+	}
 }
 
 /**
@@ -82,19 +82,19 @@ function isAlive(pid: number): boolean {
  * If a stale entry for the same `sessionId` exists, it's overwritten.
  */
 export function registerWindowsPtyHost(entry: Omit<WindowsPtyHostEntry, "registeredAt">): void {
-  const next = readRaw().filter((e) => e.sessionId !== entry.sessionId);
-  next.push({ ...entry, registeredAt: new Date().toISOString() });
-  writeRaw(next);
+	const next = readRaw().filter((e) => e.sessionId !== entry.sessionId);
+	next.push({ ...entry, registeredAt: new Date().toISOString() });
+	writeRaw(next);
 }
 
 /**
  * Remove an entry by `sessionId`. No-op if absent.
  */
 export function unregisterWindowsPtyHost(sessionId: string): void {
-  const before = readRaw();
-  const next = before.filter((e) => e.sessionId !== sessionId);
-  if (next.length === before.length) return;
-  writeRaw(next);
+	const before = readRaw();
+	const next = before.filter((e) => e.sessionId !== sessionId);
+	if (next.length === before.length) return;
+	writeRaw(next);
 }
 
 /**
@@ -102,20 +102,20 @@ export function unregisterWindowsPtyHost(sessionId: string): void {
  * The on-disk file is rewritten if any entries were pruned.
  */
 export function getWindowsPtyHosts(): WindowsPtyHostEntry[] {
-  const all = readRaw();
-  const live = all.filter((e) => isAlive(e.ptyHostPid));
-  if (live.length !== all.length) writeRaw(live);
-  return live;
+	const all = readRaw();
+	const live = all.filter((e) => isAlive(e.ptyHostPid));
+	if (live.length !== all.length) writeRaw(live);
+	return live;
 }
 
 /**
  * Best-effort: delete the entire registry file. Used for tests and recovery.
  */
 export function clearWindowsPtyHostRegistry(): void {
-  writeRaw([]);
+	writeRaw([]);
 }
 
 /** Exported for tests. */
 export function __getWindowsPtyRegistryFile(): string {
-  return getRegistryFile();
+	return getRegistryFile();
 }

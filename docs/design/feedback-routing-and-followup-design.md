@@ -153,26 +153,26 @@ Minimal journal schema example:
 
 ```json
 {
-  "reportId": "fr_01HT2H2F3H4A5",
-  "dedupeKey": "f4d7dbe5b0f8...",
-  "mode": "scm",
-  "stage": "create_pr",
-  "status": "failed",
-  "attempt": 2,
-  "operationKey": "create_pr:f4d7dbe5b0f8:upstream",
-  "targetRepo": "ComposioHQ/agent-orchestrator",
-  "issueUrl": "https://github.com/ComposioHQ/agent-orchestrator/issues/399",
-  "prUrl": null,
-  "consent": {
-    "createFork": "approved",
-    "createPR": "approved",
-    "switchTarget": "not-needed"
-  },
-  "lastError": {
-    "code": "FORBIDDEN",
-    "message": "PR creation blocked by repository policy"
-  },
-  "updatedAt": "2026-03-10T15:45:00Z"
+	"reportId": "fr_01HT2H2F3H4A5",
+	"dedupeKey": "f4d7dbe5b0f8...",
+	"mode": "scm",
+	"stage": "create_pr",
+	"status": "failed",
+	"attempt": 2,
+	"operationKey": "create_pr:f4d7dbe5b0f8:upstream",
+	"targetRepo": "ComposioHQ/agent-orchestrator",
+	"issueUrl": "https://github.com/ComposioHQ/agent-orchestrator/issues/399",
+	"prUrl": null,
+	"consent": {
+		"createFork": "approved",
+		"createPR": "approved",
+		"switchTarget": "not-needed"
+	},
+	"lastError": {
+		"code": "FORBIDDEN",
+		"message": "PR creation blocked by repository policy"
+	},
+	"updatedAt": "2026-03-10T15:45:00Z"
 }
 ```
 

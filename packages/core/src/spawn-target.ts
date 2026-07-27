@@ -1,8 +1,8 @@
 import type { ProjectConfig } from "./types.js";
 
 export interface SpawnTarget {
-  projectId: string;
-  issueId: string;
+	projectId: string;
+	issueId: string;
 }
 
 /**
@@ -22,27 +22,27 @@ export interface SpawnTarget {
  *   is passed through as the issue id.
  */
 export function resolveSpawnTarget(
-  projects: Record<string, ProjectConfig>,
-  issueRef: string,
-  fallbackProjectId?: string,
+	projects: Record<string, ProjectConfig>,
+	issueRef: string,
+	fallbackProjectId?: string,
 ): SpawnTarget | null {
-  const slashIdx = issueRef.indexOf("/");
-  if (slashIdx > 0 && slashIdx < issueRef.length - 1) {
-    const prefix = issueRef.slice(0, slashIdx);
-    const rest = issueRef.slice(slashIdx + 1);
+	const slashIdx = issueRef.indexOf("/");
+	if (slashIdx > 0 && slashIdx < issueRef.length - 1) {
+		const prefix = issueRef.slice(0, slashIdx);
+		const rest = issueRef.slice(slashIdx + 1);
 
-    // hasOwn guards against prototype keys (`__proto__`, `constructor`, …)
-    // incorrectly matching via inheritance from Object.prototype.
-    if (Object.prototype.hasOwnProperty.call(projects, prefix)) {
-      return { projectId: prefix, issueId: rest };
-    }
-    for (const [pid, project] of Object.entries(projects)) {
-      if (project.sessionPrefix === prefix) {
-        return { projectId: pid, issueId: rest };
-      }
-    }
-  }
+		// hasOwn guards against prototype keys (`__proto__`, `constructor`, …)
+		// incorrectly matching via inheritance from Object.prototype.
+		if (Object.prototype.hasOwnProperty.call(projects, prefix)) {
+			return { projectId: prefix, issueId: rest };
+		}
+		for (const [pid, project] of Object.entries(projects)) {
+			if (project.sessionPrefix === prefix) {
+				return { projectId: pid, issueId: rest };
+			}
+		}
+	}
 
-  if (!fallbackProjectId) return null;
-  return { projectId: fallbackProjectId, issueId: issueRef };
+	if (!fallbackProjectId) return null;
+	return { projectId: fallbackProjectId, issueId: issueRef };
 }

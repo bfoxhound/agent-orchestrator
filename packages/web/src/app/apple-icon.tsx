@@ -6,6 +6,6 @@ export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 
 export default function AppleIcon() {
-  const name = sanitizeIconName(getProjectName());
-  return new ImageResponse(renderIconElement(180, name), { ...size });
+	const name = sanitizeIconName(getProjectName());
+	return new ImageResponse(renderIconElement(180, name), { ...size });
 }

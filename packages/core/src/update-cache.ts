@@ -31,18 +31,18 @@ import { fileURLToPath } from "node:url";
  *      currency) — this raw shape is what's on disk, not what's safe to use.
  */
 export interface UpdateCheckCacheRaw {
-  latestVersion?: string;
-  checkedAt?: string;
-  currentVersionAtCheck?: string;
-  /** "stable" | "nightly" | "manual"; kept as string here so core doesn't import the enum. */
-  channel?: string;
-  /** "git" | "npm-global" | "pnpm-global" | "bun-global" | "homebrew" | "unknown". */
-  installMethod?: string;
-  /** Set by `checkForUpdate` when computing `isOutdated` for non-git entries. */
-  isOutdated?: boolean;
-  /** Git installs only — used to invalidate the cache when the user runs `git pull` manually. */
-  currentRevisionAtCheck?: string;
-  latestRevisionAtCheck?: string;
+	latestVersion?: string;
+	checkedAt?: string;
+	currentVersionAtCheck?: string;
+	/** "stable" | "nightly" | "manual"; kept as string here so core doesn't import the enum. */
+	channel?: string;
+	/** "git" | "npm-global" | "pnpm-global" | "bun-global" | "homebrew" | "unknown". */
+	installMethod?: string;
+	/** Set by `checkForUpdate` when computing `isOutdated` for non-git entries. */
+	isOutdated?: boolean;
+	/** Git installs only — used to invalidate the cache when the user runs `git pull` manually. */
+	currentRevisionAtCheck?: string;
+	latestRevisionAtCheck?: string;
 }
 
 /**
@@ -50,21 +50,21 @@ export interface UpdateCheckCacheRaw {
  * falling back to `~/.cache/ao/update-check.json`.
  */
 export function getUpdateCheckCachePath(): string {
-  const xdg = process.env["XDG_CACHE_HOME"];
-  const base = xdg || join(homedir(), ".cache");
-  return join(base, "ao", "update-check.json");
+	const xdg = process.env["XDG_CACHE_HOME"];
+	const base = xdg || join(homedir(), ".cache");
+	return join(base, "ao", "update-check.json");
 }
 
 /** Raw cache read with no semantic validation. Returns null on missing/corrupt. */
 export function readUpdateCheckCacheRaw(): UpdateCheckCacheRaw | null {
-  const path = getUpdateCheckCachePath();
-  if (!existsSync(path)) return null;
-  try {
-    const raw = readFileSync(path, "utf-8");
-    return JSON.parse(raw) as UpdateCheckCacheRaw;
-  } catch {
-    return null;
-  }
+	const path = getUpdateCheckCachePath();
+	if (!existsSync(path)) return null;
+	try {
+		const raw = readFileSync(path, "utf-8");
+		return JSON.parse(raw) as UpdateCheckCacheRaw;
+	} catch {
+		return null;
+	}
 }
 
 /**
@@ -79,15 +79,15 @@ export function readUpdateCheckCacheRaw(): UpdateCheckCacheRaw | null {
  * `isVersionOutdated` against.
  */
 export function getInstalledAoVersion(): string {
-  const require = createRequire(fileURLToPath(import.meta.url));
-  const candidates = ["@aoagents/ao/package.json", "@aoagents/ao-web/package.json"];
-  for (const candidate of candidates) {
-    try {
-      const pkg = require(candidate) as { version?: unknown };
-      if (typeof pkg.version === "string") return pkg.version;
-    } catch {
-      // try next candidate
-    }
-  }
-  return "0.0.0";
+	const require = createRequire(fileURLToPath(import.meta.url));
+	const candidates = ["@aoagents/ao/package.json", "@aoagents/ao-web/package.json"];
+	for (const candidate of candidates) {
+		try {
+			const pkg = require(candidate) as { version?: unknown };
+			if (typeof pkg.version === "string") return pkg.version;
+		} catch {
+			// try next candidate
+		}
+	}
+	return "0.0.0";
 }

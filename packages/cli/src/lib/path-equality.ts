@@ -26,11 +26,11 @@ import { isWindows } from "@aoagents/ao-core";
  * resolve-project.ts.
  */
 function canonicalize(p: string): string {
-  try {
-    return realpathSync(p);
-  } catch {
-    return p;
-  }
+	try {
+		return realpathSync(p);
+	} catch {
+		return p;
+	}
 }
 
 /**
@@ -39,9 +39,9 @@ function canonicalize(p: string): string {
  * caller needs a stable key for `Map`/`Set` lookups across many paths.
  */
 export function canonicalCompareKey(input: string): string {
-  const expanded = input.replace(/^~/, process.env["HOME"] ?? "");
-  const canonical = canonicalize(resolve(expanded));
-  return isWindows() ? canonical.toLowerCase() : canonical;
+	const expanded = input.replace(/^~/, process.env["HOME"] ?? "");
+	const canonical = canonicalize(resolve(expanded));
+	return isWindows() ? canonical.toLowerCase() : canonical;
 }
 
 /**
@@ -50,5 +50,5 @@ export function canonicalCompareKey(input: string): string {
  * helper for readability at call sites.
  */
 export function pathsEqual(a: string, b: string): boolean {
-  return canonicalCompareKey(a) === canonicalCompareKey(b);
+	return canonicalCompareKey(a) === canonicalCompareKey(b);
 }

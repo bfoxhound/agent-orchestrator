@@ -15,10 +15,10 @@ import { getAoBaseDir } from "./paths.js";
 const _require = createRequire(import.meta.url);
 
 type BetterSqlite3Database = {
-  pragma(source: string, options?: { simple?: boolean }): unknown;
-  exec(source: string): void;
-  prepare(source: string): { run(...args: unknown[]): unknown; all(...args: unknown[]): unknown[] };
-  close(): void;
+	pragma(source: string, options?: { simple?: boolean }): unknown;
+	exec(source: string): void;
+	prepare(source: string): { run(...args: unknown[]): unknown; all(...args: unknown[]): unknown[] };
+	close(): void;
 };
 
 let _db: BetterSqlite3Database | null = null;
@@ -28,11 +28,11 @@ let _dbUnavailableWarningEmitted = false;
 const PRUNE_BATCH_SIZE = 1000;
 
 function getEventsDbPath(): string {
-  return join(getAoBaseDir(), "activity-events.db");
+	return join(getAoBaseDir(), "activity-events.db");
 }
 
 function initSchema(db: BetterSqlite3Database): void {
-  db.exec(`
+	db.exec(`
     CREATE TABLE IF NOT EXISTS activity_events (
       id         INTEGER PRIMARY KEY AUTOINCREMENT,
       ts_epoch   INTEGER NOT NULL,
@@ -55,7 +55,7 @@ function initSchema(db: BetterSqlite3Database): void {
 }
 
 function initFts(db: BetterSqlite3Database): void {
-  db.exec(`
+	db.exec(`
     CREATE VIRTUAL TABLE IF NOT EXISTS activity_events_fts USING fts5(
       summary, data,
       content='activity_events',
@@ -86,57 +86,57 @@ function initFts(db: BetterSqlite3Database): void {
     END;
   `);
 
-  // Backfill rows written before FTS was available; triggers only cover future writes.
-  db.exec("INSERT INTO activity_events_fts(activity_events_fts) VALUES('rebuild')");
+	// Backfill rows written before FTS was available; triggers only cover future writes.
+	db.exec("INSERT INTO activity_events_fts(activity_events_fts) VALUES('rebuild')");
 }
 
 function pruneOldEvents(db: BetterSqlite3Database, cutoff: number): void {
-  db.prepare(
-    `DELETE FROM activity_events
+	db.prepare(
+		`DELETE FROM activity_events
        WHERE rowid IN (
          SELECT rowid FROM activity_events WHERE ts_epoch < ? LIMIT ?
        )`,
-  ).run(cutoff, PRUNE_BATCH_SIZE);
+	).run(cutoff, PRUNE_BATCH_SIZE);
 }
 
 function openDb(): BetterSqlite3Database {
-  const Database = _require("better-sqlite3") as new (path: string) => BetterSqlite3Database;
-  mkdirSync(getAoBaseDir(), { recursive: true });
-  const db = new Database(getEventsDbPath());
+	const Database = _require("better-sqlite3") as new (path: string) => BetterSqlite3Database;
+	mkdirSync(getAoBaseDir(), { recursive: true });
+	const db = new Database(getEventsDbPath());
 
-  db.pragma("journal_mode = WAL");
-  db.pragma("busy_timeout = 3000");
-  // WAL + NORMAL gives one checkpoint window of exposure (acceptable for a diagnostic log)
-  db.pragma("synchronous = NORMAL");
+	db.pragma("journal_mode = WAL");
+	db.pragma("busy_timeout = 3000");
+	// WAL + NORMAL gives one checkpoint window of exposure (acceptable for a diagnostic log)
+	db.pragma("synchronous = NORMAL");
 
-  const version = db.pragma("user_version", { simple: true }) as number;
-  initSchema(db);
-  if (version < 1) {
-    db.pragma("user_version = 1");
-  }
+	const version = db.pragma("user_version", { simple: true }) as number;
+	initSchema(db);
+	if (version < 1) {
+		db.pragma("user_version = 1");
+	}
 
-  try {
-    initFts(db);
-    _ftsEnabled = true;
-  } catch (err) {
-    _ftsEnabled = false;
-    // eslint-disable-next-line no-console
-    console.warn(
-      "[ao] activity-events FTS unavailable — writes will continue and search will use a bounded LIKE fallback:",
-      err instanceof Error ? err.message : String(err),
-    );
-  }
+	try {
+		initFts(db);
+		_ftsEnabled = true;
+	} catch (err) {
+		_ftsEnabled = false;
+		// eslint-disable-next-line no-console
+		console.warn(
+			"[ao] activity-events FTS unavailable — writes will continue and search will use a bounded LIKE fallback:",
+			err instanceof Error ? err.message : String(err),
+		);
+	}
 
-  // 7-day retention using epoch comparison (no text/datetime ambiguity)
-  const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  pruneOldEvents(db, cutoff);
+	// 7-day retention using epoch comparison (no text/datetime ambiguity)
+	const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+	pruneOldEvents(db, cutoff);
 
-  return db;
+	return db;
 }
 
 /** Whether the current process has an initialized FTS5 search table. */
 export function isActivityEventsFtsEnabled(): boolean {
-  return _ftsEnabled;
+	return _ftsEnabled;
 }
 
 /**
@@ -148,52 +148,52 @@ export function isActivityEventsFtsEnabled(): boolean {
  * across runs must call this before `rmSync`.
  */
 export function closeDb(): void {
-  if (_db) {
-    try {
-      _db.close();
-    } catch {
-      // best-effort: connection may already be closed
-    }
-    _db = null;
-  }
-  _dbFailed = false;
-  _ftsEnabled = false;
+	if (_db) {
+		try {
+			_db.close();
+		} catch {
+			// best-effort: connection may already be closed
+		}
+		_db = null;
+	}
+	_dbFailed = false;
+	_ftsEnabled = false;
 }
 
 function isAoEventsInvocation(argv = process.argv): boolean {
-  return argv.slice(2).includes("events");
+	return argv.slice(2).includes("events");
 }
 
 function isMissingBetterSqlite3Binding(err: unknown): boolean {
-  const message = err instanceof Error ? err.message : String(err);
-  return (
-    message.includes("Could not locate the bindings file") ||
-    message.includes("better_sqlite3.node") ||
-    message.includes("Cannot find module 'better-sqlite3'")
-  );
+	const message = err instanceof Error ? err.message : String(err);
+	return (
+		message.includes("Could not locate the bindings file") ||
+		message.includes("better_sqlite3.node") ||
+		message.includes("Cannot find module 'better-sqlite3'")
+	);
 }
 
 function firstErrorLine(err: unknown): string {
-  return (err instanceof Error ? err.message : String(err)).split(/\r?\n/, 1)[0] ?? "unknown error";
+	return (err instanceof Error ? err.message : String(err)).split(/\r?\n/, 1)[0] ?? "unknown error";
 }
 
 export function formatActivityEventsDbUnavailableWarning(err: unknown): string {
-  if (isMissingBetterSqlite3Binding(err)) {
-    return `[ao] activity-events disabled: better-sqlite3 not compiled for Node ${process.version} (ABI v${process.versions.modules}). Run \`pnpm rebuild better-sqlite3\` or use a supported Node version.`;
-  }
-  return `[ao] activity-events disabled: better-sqlite3 failed to load: ${firstErrorLine(err)}`;
+	if (isMissingBetterSqlite3Binding(err)) {
+		return `[ao] activity-events disabled: better-sqlite3 not compiled for Node ${process.version} (ABI v${process.versions.modules}). Run \`pnpm rebuild better-sqlite3\` or use a supported Node version.`;
+	}
+	return `[ao] activity-events disabled: better-sqlite3 failed to load: ${firstErrorLine(err)}`;
 }
 
 export function emitActivityEventsDbUnavailableWarning(err: unknown): void {
-  if (_dbUnavailableWarningEmitted) return;
-  if (process.env["AO_DEBUG"] !== "1" && !isAoEventsInvocation()) return;
-  _dbUnavailableWarningEmitted = true;
-  // eslint-disable-next-line no-console
-  console.warn(formatActivityEventsDbUnavailableWarning(err));
+	if (_dbUnavailableWarningEmitted) return;
+	if (process.env["AO_DEBUG"] !== "1" && !isAoEventsInvocation()) return;
+	_dbUnavailableWarningEmitted = true;
+	// eslint-disable-next-line no-console
+	console.warn(formatActivityEventsDbUnavailableWarning(err));
 }
 
 export function __resetActivityEventsDbWarningForTests(): void {
-  _dbUnavailableWarningEmitted = false;
+	_dbUnavailableWarningEmitted = false;
 }
 
 /**
@@ -201,14 +201,14 @@ export function __resetActivityEventsDbWarningForTests(): void {
  * Returns null if better-sqlite3 failed to load or init — callers should treat null as no-op.
  */
 export function getDb(): BetterSqlite3Database | null {
-  if (_dbFailed) return null;
-  if (_db) return _db;
-  try {
-    _db = openDb();
-    return _db;
-  } catch (err) {
-    _dbFailed = true;
-    emitActivityEventsDbUnavailableWarning(err);
-    return null;
-  }
+	if (_dbFailed) return null;
+	if (_db) return _db;
+	try {
+		_db = openDb();
+		return _db;
+	} catch (err) {
+		_dbFailed = true;
+		emitActivityEventsDbUnavailableWarning(err);
+		return null;
+	}
 }

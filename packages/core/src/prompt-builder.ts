@@ -80,28 +80,28 @@ Do NOT self-report \`done\` or \`terminated\` — AO owns those transitions.
 // =============================================================================
 
 export interface PromptBuildConfig {
-  /** The project config from the orchestrator config */
-  project: ProjectConfig;
+	/** The project config from the orchestrator config */
+	project: ProjectConfig;
 
-  /** The project ID (key in the projects map) */
-  projectId: string;
+	/** The project ID (key in the projects map) */
+	projectId: string;
 
-  /** Issue identifier (e.g. "INT-1343", "#42") — triggers Layer 1+2 */
-  issueId?: string;
+	/** Issue identifier (e.g. "INT-1343", "#42") — triggers Layer 1+2 */
+	issueId?: string;
 
-  /** Pre-fetched issue context from tracker.generatePrompt() */
-  issueContext?: string;
+	/** Pre-fetched issue context from tracker.generatePrompt() */
+	issueContext?: string;
 
-  /** Explicit user prompt (appended last) */
-  userPrompt?: string;
+	/** Explicit user prompt (appended last) */
+	userPrompt?: string;
 
-  /**
-   * Session ID of the orchestrator the worker can message back via `ao send`.
-   * When provided, the prompt gains a "Talking to the Orchestrator" section
-   * with the literal command. Caller should pass this only when an
-   * orchestrator session actually exists for the project.
-   */
-  orchestratorSessionId?: SessionId;
+	/**
+	 * Session ID of the orchestrator the worker can message back via `ao send`.
+	 * When provided, the prompt gains a "Talking to the Orchestrator" section
+	 * with the literal command. Caller should pass this only when an
+	 * orchestrator session actually exists for the project.
+	 */
+	orchestratorSessionId?: SessionId;
 }
 
 // =============================================================================
@@ -109,50 +109,48 @@ export interface PromptBuildConfig {
 // =============================================================================
 
 function buildConfigLayer(config: PromptBuildConfig): string {
-  const { project, projectId, issueId, issueContext } = config;
-  const lines: string[] = [];
+	const { project, projectId, issueId, issueContext } = config;
+	const lines: string[] = [];
 
-  lines.push("## Project Context");
-  lines.push(`- Project: ${project.name ?? projectId}`);
-  if (project.repo) {
-    lines.push(`- Repository: ${project.repo}`);
-  }
-  lines.push(`- Default branch: ${project.defaultBranch}`);
+	lines.push("## Project Context");
+	lines.push(`- Project: ${project.name ?? projectId}`);
+	if (project.repo) {
+		lines.push(`- Repository: ${project.repo}`);
+	}
+	lines.push(`- Default branch: ${project.defaultBranch}`);
 
-  if (project.tracker) {
-    lines.push(`- Tracker: ${project.tracker.plugin}`);
-  }
+	if (project.tracker) {
+		lines.push(`- Tracker: ${project.tracker.plugin}`);
+	}
 
-  if (issueId) {
-    const normalizedId = issueId.replace(/^#/, "");
-    lines.push(`\n## Task`);
-    lines.push(`Work on issue #${normalizedId}`);
-    lines.push(
-      `Create a branch named so that it auto-links to the issue tracker (e.g. feat/${normalizedId}).`,
-    );
-  }
+	if (issueId) {
+		const normalizedId = issueId.replace(/^#/, "");
+		lines.push(`\n## Task`);
+		lines.push(`Work on issue #${normalizedId}`);
+		lines.push(`Create a branch named so that it auto-links to the issue tracker (e.g. feat/${normalizedId}).`);
+	}
 
-  if (issueContext) {
-    lines.push(`\n## Issue Details`);
-    lines.push(issueContext);
-  }
+	if (issueContext) {
+		lines.push(`\n## Issue Details`);
+		lines.push(issueContext);
+	}
 
-  // Include reaction rules so the agent knows what to expect
-  if (project.reactions) {
-    const reactionHints: string[] = [];
-    for (const [event, reaction] of Object.entries(project.reactions)) {
-      if (reaction.auto && reaction.action === "send-to-agent") {
-        reactionHints.push(`- ${event}: auto-handled (you'll receive instructions)`);
-      }
-    }
-    if (reactionHints.length > 0) {
-      lines.push(`\n## Automated Reactions`);
-      lines.push("The orchestrator will automatically handle these events:");
-      lines.push(...reactionHints);
-    }
-  }
+	// Include reaction rules so the agent knows what to expect
+	if (project.reactions) {
+		const reactionHints: string[] = [];
+		for (const [event, reaction] of Object.entries(project.reactions)) {
+			if (reaction.auto && reaction.action === "send-to-agent") {
+				reactionHints.push(`- ${event}: auto-handled (you'll receive instructions)`);
+			}
+		}
+		if (reactionHints.length > 0) {
+			lines.push(`\n## Automated Reactions`);
+			lines.push("The orchestrator will automatically handle these events:");
+			lines.push(...reactionHints);
+		}
+	}
 
-  return lines.join("\n");
+	return lines.join("\n");
 }
 
 // =============================================================================
@@ -160,25 +158,25 @@ function buildConfigLayer(config: PromptBuildConfig): string {
 // =============================================================================
 
 function readUserRules(project: ProjectConfig): string | null {
-  const parts: string[] = [];
+	const parts: string[] = [];
 
-  if (project.agentRules) {
-    parts.push(project.agentRules);
-  }
+	if (project.agentRules) {
+		parts.push(project.agentRules);
+	}
 
-  if (project.agentRulesFile) {
-    const filePath = resolve(project.path, project.agentRulesFile);
-    try {
-      const content = readFileSync(filePath, "utf-8").trim();
-      if (content) {
-        parts.push(content);
-      }
-    } catch {
-      // File not found or unreadable — skip silently (don't crash the spawn)
-    }
-  }
+	if (project.agentRulesFile) {
+		const filePath = resolve(project.path, project.agentRulesFile);
+		try {
+			const content = readFileSync(filePath, "utf-8").trim();
+			if (content) {
+				parts.push(content);
+			}
+		} catch {
+			// File not found or unreadable — skip silently (don't crash the spawn)
+		}
+	}
 
-  return parts.length > 0 ? parts.join("\n\n") : null;
+	return parts.length > 0 ? parts.join("\n\n") : null;
 }
 
 // =============================================================================
@@ -188,50 +186,48 @@ function readUserRules(project: ProjectConfig): string | null {
 /**
  * Compose a layered prompt for an agent session.
  */
-export function buildPrompt(
-  config: PromptBuildConfig,
-): { systemPrompt: string; taskPrompt?: string } {
-  const userRules = readUserRules(config.project);
-  const systemSections: string[] = [];
+export function buildPrompt(config: PromptBuildConfig): { systemPrompt: string; taskPrompt?: string } {
+	const userRules = readUserRules(config.project);
+	const systemSections: string[] = [];
 
-  // Layer 1: Base prompt is always included for every managed session.
-  // Use trimmed prompt when no repo is configured (PR/CI instructions don't apply).
-  systemSections.push(config.project.repo ? BASE_AGENT_PROMPT : BASE_AGENT_PROMPT_NO_REPO);
+	// Layer 1: Base prompt is always included for every managed session.
+	// Use trimmed prompt when no repo is configured (PR/CI instructions don't apply).
+	systemSections.push(config.project.repo ? BASE_AGENT_PROMPT : BASE_AGENT_PROMPT_NO_REPO);
 
-  // Layer 1b: Orchestrator back-channel — only rendered when caller passes an
-  // orchestratorSessionId (i.e., an orchestrator is actually running for this
-  // project). `ao send` auto-prefixes `[from <sender-session-id>]`, so the
-  // example here is just the bare command.
-  if (config.orchestratorSessionId) {
-    systemSections.push(
-      [
-        "## Talking to the Orchestrator",
-        `You can message the orchestrator session that spawned you with:`,
-        ``,
-        `\`ao send ${config.orchestratorSessionId} "<your message>"\``,
-        ``,
-        `Only do this when you genuinely cannot proceed alone — cross-session coordination, a decision only the human-facing orchestrator can make, or a blocker outside your repo's scope. Do NOT ping for things you can resolve yourself (research, retries, normal CI/review fixes go through \`ao report\` and the existing flow). \`ao send\` automatically tags the message with your session ID, so the orchestrator always knows who's writing.`,
-      ].join("\n"),
-    );
-  }
+	// Layer 1b: Orchestrator back-channel — only rendered when caller passes an
+	// orchestratorSessionId (i.e., an orchestrator is actually running for this
+	// project). `ao send` auto-prefixes `[from <sender-session-id>]`, so the
+	// example here is just the bare command.
+	if (config.orchestratorSessionId) {
+		systemSections.push(
+			[
+				"## Talking to the Orchestrator",
+				`You can message the orchestrator session that spawned you with:`,
+				``,
+				`\`ao send ${config.orchestratorSessionId} "<your message>"\``,
+				``,
+				`Only do this when you genuinely cannot proceed alone — cross-session coordination, a decision only the human-facing orchestrator can make, or a blocker outside your repo's scope. Do NOT ping for things you can resolve yourself (research, retries, normal CI/review fixes go through \`ao report\` and the existing flow). \`ao send\` automatically tags the message with your session ID, so the orchestrator always knows who's writing.`,
+			].join("\n"),
+		);
+	}
 
-  // Layer 2: Worker sessions are scoped to a single issue, so issue/task
-  // context belongs in the system prompt with the rest of the session context.
-  systemSections.push(buildConfigLayer(config));
+	// Layer 2: Worker sessions are scoped to a single issue, so issue/task
+	// context belongs in the system prompt with the rest of the session context.
+	systemSections.push(buildConfigLayer(config));
 
-  // Layer 3: User rules
-  if (userRules) {
-    systemSections.push(`## Project Rules\n${userRules}`);
-  }
+	// Layer 3: User rules
+	if (userRules) {
+		systemSections.push(`## Project Rules\n${userRules}`);
+	}
 
-  return {
-    systemPrompt: systemSections.join("\n\n"),
-    taskPrompt: config.userPrompt
-      ? config.userPrompt
-      : config.issueId
-        ? config.issueContext
-          ? `Work on issue #${config.issueId.replace(/^#/, "")}. The issue title, description, and labels are already in your system prompt — start implementing without re-fetching the issue. Fetch comments or linked issues only if you need additional context.`
-          : `Work on issue #${config.issueId.replace(/^#/, "")}. Issue details were not pre-fetched — start by reading the issue (e.g. \`gh issue view ${config.issueId.replace(/^#/, "")}\`), then implement.`
-        : undefined,
-  };
+	return {
+		systemPrompt: systemSections.join("\n\n"),
+		taskPrompt: config.userPrompt
+			? config.userPrompt
+			: config.issueId
+				? config.issueContext
+					? `Work on issue #${config.issueId.replace(/^#/, "")}. The issue title, description, and labels are already in your system prompt — start implementing without re-fetching the issue. Fetch comments or linked issues only if you need additional context.`
+					: `Work on issue #${config.issueId.replace(/^#/, "")}. Issue details were not pre-fetched — start by reading the issue (e.g. \`gh issue view ${config.issueId.replace(/^#/, "")}\`), then implement.`
+				: undefined,
+	};
 }

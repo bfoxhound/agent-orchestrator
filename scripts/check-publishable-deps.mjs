@@ -24,29 +24,29 @@ const repoRoot = join(__dirname, "..");
 
 /** Find every package.json under packages/, regardless of nesting depth. */
 function collectPackages(root) {
-  const found = [];
-  function walk(dir) {
-    if (dir.includes("node_modules")) return;
-    let entries;
-    try {
-      entries = readdirSync(dir, { withFileTypes: true });
-    } catch {
-      return;
-    }
-    for (const e of entries) {
-      const full = join(dir, e.name);
-      if (e.isDirectory()) {
-        walk(full);
-      } else if (e.name === "package.json") {
-        const parsed = JSON.parse(readFileSync(full, "utf-8"));
-        if (typeof parsed.name === "string") {
-          found.push({ path: full, pkg: parsed });
-        }
-      }
-    }
-  }
-  walk(join(root, "packages"));
-  return found;
+	const found = [];
+	function walk(dir) {
+		if (dir.includes("node_modules")) return;
+		let entries;
+		try {
+			entries = readdirSync(dir, { withFileTypes: true });
+		} catch {
+			return;
+		}
+		for (const e of entries) {
+			const full = join(dir, e.name);
+			if (e.isDirectory()) {
+				walk(full);
+			} else if (e.name === "package.json") {
+				const parsed = JSON.parse(readFileSync(full, "utf-8"));
+				if (typeof parsed.name === "string") {
+					found.push({ path: full, pkg: parsed });
+				}
+			}
+		}
+	}
+	walk(join(root, "packages"));
+	return found;
 }
 
 const packages = collectPackages(repoRoot);
@@ -54,29 +54,29 @@ const byName = new Map(packages.map((p) => [p.pkg.name, p]));
 
 const problems = [];
 for (const { pkg, path } of packages) {
-  if (pkg.private === true) continue;
-  const deps = { ...pkg.dependencies, ...pkg.peerDependencies };
-  for (const [depName, depSpec] of Object.entries(deps)) {
-    if (typeof depSpec !== "string" || !depSpec.startsWith("workspace:")) continue;
-    const target = byName.get(depName);
-    if (!target) continue;
-    if (target.pkg.private === true) {
-      problems.push(
-        `  ${pkg.name} (${path}) depends on ${depName} via workspace:*, ` +
-          `but ${depName} is private — install would fail on publish.`,
-      );
-    }
-  }
+	if (pkg.private === true) continue;
+	const deps = { ...pkg.dependencies, ...pkg.peerDependencies };
+	for (const [depName, depSpec] of Object.entries(deps)) {
+		if (typeof depSpec !== "string" || !depSpec.startsWith("workspace:")) continue;
+		const target = byName.get(depName);
+		if (!target) continue;
+		if (target.pkg.private === true) {
+			problems.push(
+				`  ${pkg.name} (${path}) depends on ${depName} via workspace:*, ` +
+					`but ${depName} is private — install would fail on publish.`,
+			);
+		}
+	}
 }
 
 if (problems.length > 0) {
-  console.error("✗ Publishable-dependency check failed:\n");
-  for (const p of problems) console.error(p);
-  console.error(
-    "\nFix by making the dependency publishable (drop `private: true` and add" +
-      " it to the changeset linked group) OR by removing the runtime dependency.",
-  );
-  process.exit(1);
+	console.error("✗ Publishable-dependency check failed:\n");
+	for (const p of problems) console.error(p);
+	console.error(
+		"\nFix by making the dependency publishable (drop `private: true` and add" +
+			" it to the changeset linked group) OR by removing the runtime dependency.",
+	);
+	process.exit(1);
 }
 
 console.log(`✓ Publishable-dependency check passed (${packages.length} packages scanned).`);

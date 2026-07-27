@@ -4,8 +4,10 @@ description: Discord webhook with rich embeds, retry handling, and thread suppor
 ---
 
 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", margin: "0.5rem 0 1.25rem" }}>
-  <Logo name="discord" size={28} color />
-  <span style={{ fontSize: "0.8125rem", color: "var(--color-fd-muted-foreground)" }}>Slot: <code>notifier</code> · Name: <code>discord</code></span>
+	<Logo name="discord" size={28} color />
+	<span style={{ fontSize: "0.8125rem", color: "var(--color-fd-muted-foreground)" }}>
+		Slot: <code>notifier</code> · Name: <code>discord</code>
+	</span>
 </div>
 
 <PlatformSupport macos="full" linux="full" windows="full" />
@@ -20,23 +22,23 @@ description: Discord webhook with rich embeds, retry handling, and thread suppor
 notifier:
   - type: discord
     webhookUrl: ${DISCORD_WEBHOOK_URL}
-    username: "AO"                    # optional
-    avatarUrl: https://...png         # optional
-    threadId: "1234567890"            # optional — post into a thread
-    retries: 3                        # default
-    retryDelayMs: 1000                # default
+    username: "AO" # optional
+    avatarUrl: https://...png # optional
+    threadId: "1234567890" # optional — post into a thread
+    retries: 3 # default
+    retryDelayMs: 1000 # default
 ```
 
 ## Config
 
-| Key | Required | Default | What it does |
-|---|---|---|---|
-| `webhookUrl` | ✓ | — | Full `discord.com/api/webhooks/...` URL |
-| `username` | optional | — | Override webhook default username per message |
-| `avatarUrl` | optional | — | Override webhook default avatar |
-| `threadId` | optional | — | Post into an existing thread |
-| `retries` | optional | `3` | Retry count on 5xx / network errors |
-| `retryDelayMs` | optional | `1000` | Base retry delay (exponential backoff) |
+| Key            | Required | Default | What it does                                  |
+| -------------- | -------- | ------- | --------------------------------------------- |
+| `webhookUrl`   | ✓        | —       | Full `discord.com/api/webhooks/...` URL       |
+| `username`     | optional | —       | Override webhook default username per message |
+| `avatarUrl`    | optional | —       | Override webhook default avatar               |
+| `threadId`     | optional | —       | Post into an existing thread                  |
+| `retries`      | optional | `3`     | Retry count on 5xx / network errors           |
+| `retryDelayMs` | optional | `1000`  | Base retry delay (exponential backoff)        |
 
 ## Rich embeds
 

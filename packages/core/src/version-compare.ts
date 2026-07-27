@@ -23,31 +23,31 @@
  * the tag they're tracking), so this function just answers: is current < latest?
  */
 export function isVersionOutdated(current: string, latest: string): boolean {
-  const c = parseVersion(current);
-  const l = parseVersion(latest);
+	const c = parseVersion(current);
+	const l = parseVersion(latest);
 
-  for (let i = 0; i < 3; i++) {
-    const cp = c.parts[i] ?? 0;
-    const lp = l.parts[i] ?? 0;
-    if (Number.isNaN(cp) || Number.isNaN(lp)) return false;
-    if (cp < lp) return true;
-    if (cp > lp) return false;
-  }
+	for (let i = 0; i < 3; i++) {
+		const cp = c.parts[i] ?? 0;
+		const lp = l.parts[i] ?? 0;
+		if (Number.isNaN(cp) || Number.isNaN(lp)) return false;
+		if (cp < lp) return true;
+		if (cp > lp) return false;
+	}
 
-  // Numeric base equal — compare prerelease tags.
-  if (!c.prerelease && !l.prerelease) return false;
-  if (c.prerelease && !l.prerelease) return true; // prerelease < stable
-  if (!c.prerelease && l.prerelease) return false; // stable > prerelease
-  return comparePrereleaseSegments(c.prerelease ?? "", l.prerelease ?? "") < 0;
+	// Numeric base equal — compare prerelease tags.
+	if (!c.prerelease && !l.prerelease) return false;
+	if (c.prerelease && !l.prerelease) return true; // prerelease < stable
+	if (!c.prerelease && l.prerelease) return false; // stable > prerelease
+	return comparePrereleaseSegments(c.prerelease ?? "", l.prerelease ?? "") < 0;
 }
 
 function parseVersion(version: string): { parts: number[]; prerelease: string | undefined } {
-  const [base, ...rest] = version.split("-");
-  const prerelease = rest.length > 0 ? rest.join("-") : undefined;
-  return {
-    parts: (base ?? "").split(".").map(Number),
-    prerelease,
-  };
+	const [base, ...rest] = version.split("-");
+	const prerelease = rest.length > 0 ? rest.join("-") : undefined;
+	return {
+		parts: (base ?? "").split(".").map(Number),
+		prerelease,
+	};
 }
 
 /**
@@ -71,26 +71,26 @@ function parseVersion(version: string): { parts: number[]; prerelease: string | 
  *     scenario doesn't occur in practice.)
  */
 function comparePrereleaseSegments(a: string, b: string): number {
-  const aSeg = a.split(".");
-  const bSeg = b.split(".");
-  const max = Math.max(aSeg.length, bSeg.length);
-  for (let i = 0; i < max; i++) {
-    const ax = aSeg[i];
-    const bx = bSeg[i];
-    if (ax === undefined) return -1;
-    if (bx === undefined) return 1;
-    const aNum = /^\d+$/.test(ax);
-    const bNum = /^\d+$/.test(bx);
-    if (aNum && bNum) {
-      const an = Number(ax);
-      const bn = Number(bx);
-      if (an !== bn) return an < bn ? -1 : 1;
-    } else if (aNum !== bNum) {
-      return aNum ? -1 : 1; // numeric < non-numeric
-    } else if (ax !== bx) {
-      // Both non-numeric and differ. Cannot reliably order — return "older."
-      return -1;
-    }
-  }
-  return 0;
+	const aSeg = a.split(".");
+	const bSeg = b.split(".");
+	const max = Math.max(aSeg.length, bSeg.length);
+	for (let i = 0; i < max; i++) {
+		const ax = aSeg[i];
+		const bx = bSeg[i];
+		if (ax === undefined) return -1;
+		if (bx === undefined) return 1;
+		const aNum = /^\d+$/.test(ax);
+		const bNum = /^\d+$/.test(bx);
+		if (aNum && bNum) {
+			const an = Number(ax);
+			const bn = Number(bx);
+			if (an !== bn) return an < bn ? -1 : 1;
+		} else if (aNum !== bNum) {
+			return aNum ? -1 : 1; // numeric < non-numeric
+		} else if (ax !== bx) {
+			// Both non-numeric and differ. Cannot reliably order — return "older."
+			return -1;
+		}
+	}
+	return 0;
 }

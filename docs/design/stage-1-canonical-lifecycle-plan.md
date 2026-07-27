@@ -146,30 +146,30 @@ This is preferable to scattering dozens of new top-level keys because:
 
 ```json
 {
-  "version": 2,
-  "session": {
-    "kind": "worker",
-    "state": "working",
-    "reason": "fixing_ci",
-    "startedAt": "2026-04-15T12:00:00.000Z",
-    "completedAt": null,
-    "terminatedAt": null,
-    "lastTransitionAt": "2026-04-15T12:34:56.000Z"
-  },
-  "pr": {
-    "state": "open",
-    "reason": "ci_failing",
-    "number": 123,
-    "url": "https://github.com/org/repo/pull/123",
-    "lastObservedAt": "2026-04-15T12:34:30.000Z"
-  },
-  "runtime": {
-    "state": "alive",
-    "reason": "process_running",
-    "lastObservedAt": "2026-04-15T12:34:20.000Z",
-    "handle": {},
-    "tmuxName": "abc123-app-4"
-  }
+	"version": 2,
+	"session": {
+		"kind": "worker",
+		"state": "working",
+		"reason": "fixing_ci",
+		"startedAt": "2026-04-15T12:00:00.000Z",
+		"completedAt": null,
+		"terminatedAt": null,
+		"lastTransitionAt": "2026-04-15T12:34:56.000Z"
+	},
+	"pr": {
+		"state": "open",
+		"reason": "ci_failing",
+		"number": 123,
+		"url": "https://github.com/org/repo/pull/123",
+		"lastObservedAt": "2026-04-15T12:34:30.000Z"
+	},
+	"runtime": {
+		"state": "alive",
+		"reason": "process_running",
+		"lastObservedAt": "2026-04-15T12:34:20.000Z",
+		"handle": {},
+		"tmuxName": "abc123-app-4"
+	}
 }
 ```
 

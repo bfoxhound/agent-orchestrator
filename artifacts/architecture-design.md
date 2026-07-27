@@ -105,22 +105,22 @@ Human only intervenes when notified. Everything else is handled.
 
 ```typescript
 interface Runtime {
-  readonly name: string;
+	readonly name: string;
 
-  // Lifecycle
-  create(session: SessionConfig): Promise<RuntimeHandle>;
-  destroy(handle: RuntimeHandle): Promise<void>;
+	// Lifecycle
+	create(session: SessionConfig): Promise<RuntimeHandle>;
+	destroy(handle: RuntimeHandle): Promise<void>;
 
-  // Communication
-  sendMessage(handle: RuntimeHandle, message: string): Promise<void>;
-  getOutput(handle: RuntimeHandle, lines?: number): Promise<string>;
+	// Communication
+	sendMessage(handle: RuntimeHandle, message: string): Promise<void>;
+	getOutput(handle: RuntimeHandle, lines?: number): Promise<string>;
 
-  // Health
-  isAlive(handle: RuntimeHandle): Promise<boolean>;
-  getMetrics(handle: RuntimeHandle): Promise<RuntimeMetrics>;
+	// Health
+	isAlive(handle: RuntimeHandle): Promise<boolean>;
+	getMetrics(handle: RuntimeHandle): Promise<RuntimeMetrics>;
 
-  // Optional: interactive access
-  attach?(handle: RuntimeHandle): Promise<AttachInfo>;
+	// Optional: interactive access
+	attach?(handle: RuntimeHandle): Promise<AttachInfo>;
 }
 ```
 
@@ -139,23 +139,23 @@ interface Runtime {
 
 ```typescript
 interface Agent {
-  readonly name: string;
-  readonly processName: string; // for detection
+	readonly name: string;
+	readonly processName: string; // for detection
 
-  // Launch
-  getLaunchCommand(session: SessionConfig, project: ProjectConfig): string;
-  getEnvironment(session: SessionConfig): Record<string, string>;
+	// Launch
+	getLaunchCommand(session: SessionConfig, project: ProjectConfig): string;
+	getEnvironment(session: SessionConfig): Record<string, string>;
 
-  // Activity detection
-  detectActivity(session: Session): Promise<ActivityState>;
-  isProcessRunning(runtimeHandle: RuntimeHandle): Promise<boolean>;
+	// Activity detection
+	detectActivity(session: Session): Promise<ActivityState>;
+	isProcessRunning(runtimeHandle: RuntimeHandle): Promise<boolean>;
 
-  // Introspection
-  introspect(session: Session): Promise<AgentIntrospection | null>;
+	// Introspection
+	introspect(session: Session): Promise<AgentIntrospection | null>;
 
-  // Optional
-  postLaunchSetup?(session: Session): Promise<void>;
-  estimateCost?(session: Session): Promise<CostEstimate>;
+	// Optional
+	postLaunchSetup?(session: Session): Promise<void>;
+	estimateCost?(session: Session): Promise<CostEstimate>;
 }
 ```
 
@@ -172,14 +172,14 @@ interface Agent {
 
 ```typescript
 interface Workspace {
-  readonly name: string;
+	readonly name: string;
 
-  create(project: ProjectConfig, session: SessionConfig): Promise<WorkspacePath>;
-  destroy(path: WorkspacePath): Promise<void>;
-  list(project: ProjectConfig): Promise<WorkspaceInfo[]>;
+	create(project: ProjectConfig, session: SessionConfig): Promise<WorkspacePath>;
+	destroy(path: WorkspacePath): Promise<void>;
+	list(project: ProjectConfig): Promise<WorkspaceInfo[]>;
 
-  // Optional hooks
-  postCreate?(path: WorkspacePath, project: ProjectConfig): Promise<void>;
+	// Optional hooks
+	postCreate?(path: WorkspacePath, project: ProjectConfig): Promise<void>;
 }
 ```
 
@@ -194,18 +194,18 @@ interface Workspace {
 
 ```typescript
 interface Tracker {
-  readonly name: string;
+	readonly name: string;
 
-  getIssue(identifier: string): Promise<Issue>;
-  isCompleted(identifier: string): Promise<boolean>;
-  issueUrl(identifier: string): string;
-  branchName(identifier: string): string;
-  generatePrompt(identifier: string, project: ProjectConfig): string;
+	getIssue(identifier: string): Promise<Issue>;
+	isCompleted(identifier: string): Promise<boolean>;
+	issueUrl(identifier: string): string;
+	branchName(identifier: string): string;
+	generatePrompt(identifier: string, project: ProjectConfig): string;
 
-  // Optional
-  listIssues?(filters?: IssueFilters): Promise<Issue[]>;
-  updateIssue?(identifier: string, update: IssueUpdate): Promise<void>;
-  createIssue?(input: CreateIssueInput): Promise<Issue>;
+	// Optional
+	listIssues?(filters?: IssueFilters): Promise<Issue[]>;
+	updateIssue?(identifier: string, update: IssueUpdate): Promise<void>;
+	createIssue?(input: CreateIssueInput): Promise<Issue>;
 }
 ```
 
@@ -220,27 +220,27 @@ interface Tracker {
 
 ```typescript
 interface SCM {
-  readonly name: string;
+	readonly name: string;
 
-  // PR lifecycle
-  detectPR(session: Session): Promise<PRInfo | null>;
-  getPRState(pr: PRInfo): Promise<PRState>;
-  createPR(session: Session, title: string, body: string): Promise<PRInfo>;
-  mergePR(pr: PRInfo, method?: MergeMethod): Promise<void>;
-  closePR(pr: PRInfo): Promise<void>;
+	// PR lifecycle
+	detectPR(session: Session): Promise<PRInfo | null>;
+	getPRState(pr: PRInfo): Promise<PRState>;
+	createPR(session: Session, title: string, body: string): Promise<PRInfo>;
+	mergePR(pr: PRInfo, method?: MergeMethod): Promise<void>;
+	closePR(pr: PRInfo): Promise<void>;
 
-  // CI tracking
-  getCIChecks(pr: PRInfo): Promise<CICheck[]>;
-  getCISummary(pr: PRInfo): Promise<CIStatus>;
+	// CI tracking
+	getCIChecks(pr: PRInfo): Promise<CICheck[]>;
+	getCISummary(pr: PRInfo): Promise<CIStatus>;
 
-  // Review tracking
-  getReviews(pr: PRInfo): Promise<Review[]>;
-  getReviewDecision(pr: PRInfo): Promise<ReviewDecision>;
-  getPendingComments(pr: PRInfo): Promise<ReviewComment[]>;
-  getAutomatedComments(pr: PRInfo): Promise<AutomatedComment[]>;
+	// Review tracking
+	getReviews(pr: PRInfo): Promise<Review[]>;
+	getReviewDecision(pr: PRInfo): Promise<ReviewDecision>;
+	getPendingComments(pr: PRInfo): Promise<ReviewComment[]>;
+	getAutomatedComments(pr: PRInfo): Promise<AutomatedComment[]>;
 
-  // Merge readiness
-  getMergeability(pr: PRInfo): Promise<MergeReadiness>;
+	// Merge readiness
+	getMergeability(pr: PRInfo): Promise<MergeReadiness>;
 }
 ```
 
@@ -256,23 +256,23 @@ The notifier is not a nice-to-have — it is the primary way the system communic
 
 ```typescript
 interface Notifier {
-  readonly name: string;
+	readonly name: string;
 
-  // Core: push a notification to the human
-  notify(event: OrchestratorEvent): Promise<void>;
+	// Core: push a notification to the human
+	notify(event: OrchestratorEvent): Promise<void>;
 
-  // Optional: actionable notifications (buttons/links)
-  notifyWithActions?(event: OrchestratorEvent, actions: NotifyAction[]): Promise<void>;
+	// Optional: actionable notifications (buttons/links)
+	notifyWithActions?(event: OrchestratorEvent, actions: NotifyAction[]): Promise<void>;
 
-  // Optional: richer communication (post to channel)
-  post?(message: string, context?: NotifyContext): Promise<string | null>;
+	// Optional: richer communication (post to channel)
+	post?(message: string, context?: NotifyContext): Promise<string | null>;
 }
 
 // Notifications can include actions the human can take directly
 interface NotifyAction {
-  label: string; // "Merge PR", "Open Dashboard", "Kill Session"
-  url?: string; // Deep link to dashboard action
-  callback?: string; // API endpoint to call
+	label: string; // "Merge PR", "Open Dashboard", "Kill Session"
+	url?: string; // Deep link to dashboard action
+	callback?: string; // API endpoint to call
 }
 ```
 
@@ -290,13 +290,13 @@ interface NotifyAction {
 
 ```typescript
 interface Terminal {
-  readonly name: string;
+	readonly name: string;
 
-  openSession(session: Session): Promise<void>;
-  openAll(sessions: Session[]): Promise<void>;
+	openSession(session: Session): Promise<void>;
+	openAll(sessions: Session[]): Promise<void>;
 
-  // Optional
-  isSessionOpen?(session: Session): Promise<boolean>;
+	// Optional
+	isSessionOpen?(session: Session): Promise<boolean>;
 }
 ```
 
