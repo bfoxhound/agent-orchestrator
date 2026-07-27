@@ -17,18 +17,14 @@ const execFileAsync = promisify(execFile);
  * @param workspacePath Absolute path to the workspace (must be a git repo).
  * @param windowSeconds How far back to look for commits. Defaults to 60s.
  */
-export async function hasRecentCommits(
-  workspacePath: string,
-  windowSeconds = 60,
-): Promise<boolean> {
-  try {
-    const { stdout } = await execFileAsync(
-      "git",
-      ["log", `--since=${windowSeconds} seconds ago`, "--format=%H"],
-      { cwd: workspacePath, timeout: 5_000 },
-    );
-    return stdout.trim().length > 0;
-  } catch {
-    return false;
-  }
+export async function hasRecentCommits(workspacePath: string, windowSeconds = 60): Promise<boolean> {
+	try {
+		const { stdout } = await execFileAsync("git", ["log", `--since=${windowSeconds} seconds ago`, "--format=%H"], {
+			cwd: workspacePath,
+			timeout: 5_000,
+		});
+		return stdout.trim().length > 0;
+	} catch {
+		return false;
+	}
 }

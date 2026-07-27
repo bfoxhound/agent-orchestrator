@@ -29,96 +29,93 @@ const DEFAULT_INTERVAL_MS = 60_000;
 const DEFAULT_AGE_MS = 60_000;
 
 export interface BunTmpJanitorOptions {
-  intervalMs?: number;
-  ageMs?: number;
-  onSweep?: (result: { removed: number; freedBytes: number; errors: number }) => void;
+	intervalMs?: number;
+	ageMs?: number;
+	onSweep?: (result: { removed: number; freedBytes: number; errors: number }) => void;
 }
 
 let timer: NodeJS.Timeout | null = null;
 let inFlightTick: Promise<void> | null = null;
 
-async function sweepOnce(
-  dir: string,
-  ageMs: number,
-): Promise<{ removed: number; freedBytes: number; errors: number }> {
-  let removed = 0;
-  let freedBytes = 0;
-  let errors = 0;
+async function sweepOnce(dir: string, ageMs: number): Promise<{ removed: number; freedBytes: number; errors: number }> {
+	let removed = 0;
+	let freedBytes = 0;
+	let errors = 0;
 
-  let entries: string[];
-  try {
-    entries = await readdir(dir);
-  } catch {
-    // Directory may not exist yet (no opencode child has run). That is not
-    // an error condition — there is nothing to sweep.
-    return { removed, freedBytes, errors: 0 };
-  }
+	let entries: string[];
+	try {
+		entries = await readdir(dir);
+	} catch {
+		// Directory may not exist yet (no opencode child has run). That is not
+		// an error condition — there is nothing to sweep.
+		return { removed, freedBytes, errors: 0 };
+	}
 
-  // Filter synchronously *before* spawning per-entry stat/unlink work. On a
-  // host with thousands of /tmp entries this avoids allocating one promise
-  // per file we are about to discard. (Belt-and-suspenders: TMPDIR isolation
-  // already bounds the directory contents to AO's own children.)
-  const matches = entries.filter((name) => BUN_TMP_LIB_PATTERN.test(name));
-  if (matches.length === 0) {
-    return { removed, freedBytes, errors: 0 };
-  }
+	// Filter synchronously *before* spawning per-entry stat/unlink work. On a
+	// host with thousands of /tmp entries this avoids allocating one promise
+	// per file we are about to discard. (Belt-and-suspenders: TMPDIR isolation
+	// already bounds the directory contents to AO's own children.)
+	const matches = entries.filter((name) => BUN_TMP_LIB_PATTERN.test(name));
+	if (matches.length === 0) {
+		return { removed, freedBytes, errors: 0 };
+	}
 
-  const cutoff = Date.now() - ageMs;
+	const cutoff = Date.now() - ageMs;
 
-  await Promise.all(
-    matches.map(async (name) => {
-      const path = join(dir, name);
-      try {
-        const st = await stat(path);
-        if (!st.isFile() || st.mtimeMs > cutoff) return;
-        await unlink(path);
-        removed += 1;
-        freedBytes += st.size;
-      } catch {
-        // File may have been deleted by another sweeper, or stat raced
-        // with an unlink, or we lack permission. Best-effort — don't throw.
-        errors += 1;
-      }
-    }),
-  );
+	await Promise.all(
+		matches.map(async (name) => {
+			const path = join(dir, name);
+			try {
+				const st = await stat(path);
+				if (!st.isFile() || st.mtimeMs > cutoff) return;
+				await unlink(path);
+				removed += 1;
+				freedBytes += st.size;
+			} catch {
+				// File may have been deleted by another sweeper, or stat raced
+				// with an unlink, or we lack permission. Best-effort — don't throw.
+				errors += 1;
+			}
+		}),
+	);
 
-  return { removed, freedBytes, errors };
+	return { removed, freedBytes, errors };
 }
 
 export function startBunTmpJanitor(options: BunTmpJanitorOptions = {}): boolean {
-  // Windows: opencode ships no win32 binary and unlinking mapped files is
-  // disallowed by the kernel, so the janitor would be both unnecessary and
-  // potentially error-prone. Skip.
-  if (process.platform === "win32") return false;
-  if (timer) return false;
+	// Windows: opencode ships no win32 binary and unlinking mapped files is
+	// disallowed by the kernel, so the janitor would be both unnecessary and
+	// potentially error-prone. Skip.
+	if (process.platform === "win32") return false;
+	if (timer) return false;
 
-  const intervalMs = options.intervalMs ?? DEFAULT_INTERVAL_MS;
-  const ageMs = options.ageMs ?? DEFAULT_AGE_MS;
-  const { onSweep } = options;
-  const dir = getOpenCodeTmpDir();
+	const intervalMs = options.intervalMs ?? DEFAULT_INTERVAL_MS;
+	const ageMs = options.ageMs ?? DEFAULT_AGE_MS;
+	const { onSweep } = options;
+	const dir = getOpenCodeTmpDir();
 
-  const tick = async (): Promise<void> => {
-    // Single-flight: if a previous tick is still running, skip this one.
-    if (inFlightTick) return;
-    const promise = (async () => {
-      try {
-        const result = await sweepOnce(dir, ageMs);
-        if (onSweep && (result.removed > 0 || result.errors > 0)) {
-          onSweep(result);
-        }
-      } finally {
-        inFlightTick = null;
-      }
-    })();
-    inFlightTick = promise;
-    await promise;
-  };
+	const tick = async (): Promise<void> => {
+		// Single-flight: if a previous tick is still running, skip this one.
+		if (inFlightTick) return;
+		const promise = (async () => {
+			try {
+				const result = await sweepOnce(dir, ageMs);
+				if (onSweep && (result.removed > 0 || result.errors > 0)) {
+					onSweep(result);
+				}
+			} finally {
+				inFlightTick = null;
+			}
+		})();
+		inFlightTick = promise;
+		await promise;
+	};
 
-  // Run an immediate sweep to clear any backlog, then on an interval.
-  void tick();
-  timer = setInterval(() => void tick(), intervalMs);
-  timer.unref();
-  return true;
+	// Run an immediate sweep to clear any backlog, then on an interval.
+	void tick();
+	timer = setInterval(() => void tick(), intervalMs);
+	timer.unref();
+	return true;
 }
 
 /**
@@ -127,19 +124,19 @@ export function startBunTmpJanitor(options: BunTmpJanitorOptions = {}): boolean 
  * `unlink` calls are still mid-flight against the filesystem.
  */
 export async function stopBunTmpJanitor(): Promise<void> {
-  if (timer) {
-    clearInterval(timer);
-    timer = null;
-  }
-  if (inFlightTick) {
-    try {
-      await inFlightTick;
-    } catch {
-      // Best-effort — don't block shutdown on an in-flight sweep error.
-    }
-  }
+	if (timer) {
+		clearInterval(timer);
+		timer = null;
+	}
+	if (inFlightTick) {
+		try {
+			await inFlightTick;
+		} catch {
+			// Best-effort — don't block shutdown on an in-flight sweep error.
+		}
+	}
 }
 
 export function isBunTmpJanitorRunning(): boolean {
-  return timer !== null;
+	return timer !== null;
 }

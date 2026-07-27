@@ -9,6 +9,7 @@ What reviewers cared about, where the bodies are buried, and what to verify befo
 This PR has been through **11+ review rounds** across multiple reviewers (humans + Copilot bot). The commit log reflects this — see group L "Review fixes" in `pr-1466.html` (Commit Story tab). Treat any new feedback as the 12th round, not the 1st.
 
 **Reviewer focus areas, in descending order of attention:**
+
 1. `migrate-storage/` — the migration + rollback machinery. Most reviewed; most edge cases filed.
 2. Cross-project CLI semantics (`ao stop` / `ao start` / Ctrl+C) — behavioral correctness around `last-stop.json`.
 3. Status / lifecycle dual-truth elimination — making sure no consumer still reads `previousStatus`.
@@ -21,24 +22,24 @@ This PR has been through **11+ review rounds** across multiple reviewers (humans
 
 The migration machinery survived a brutal review pass. The PR has explicit handlers for **at least 21 named edge cases**, codified mostly in commit `64caef04` ("EC-1..EC-8, EC-14, EC-27") and follow-ups. The ones to keep in mind when changing this code:
 
-| ID / theme | Scenario | Where handled |
-|------------|----------|---------------|
-| EC-1 | V1 root has both new and legacy directories simultaneously | `migrate-storage/inventory.ts` |
-| EC-2 | macOS case-insensitive filesystem collision (`Foo` vs `foo`) | `64caef04` |
-| EC-3 | Git worktree files contain absolute paths to old location | `ff61ee97` |
-| EC-7 | Re-running migration on a partially-migrated tree | `880930a2` (`.migrated` markers, prevent `.migrated.migrated`) |
-| EC-8 | Active sessions exist during migration | Pre-flight check, **bypassed only for `--dry-run`** (`c800c89c`) |
-| EC-14 | Corrupt or unparseable session JSON | Whitelisted JSON parse with rejection (`fd4f969f`) |
-| EC-27 | Rollback after partial success — preserve already-migrated worktrees | `fd4f969f` |
-| — | Stray worktree recursion (worktree containing worktree path) | `ff61ee97` |
-| — | Empty / orphaned archive directories | Archive removal commits (group C) |
-| — | Stale `running.json` from previous crashed `ao start` | Auto-pruned on next read (pre-existing, kept) |
-| — | High-entropy test placeholders triggering gitleaks | `31b20ed2`, `3e23c8db` (targeted regex) |
-| — | Two `ao migrate-storage` runs racing | File-locked global config writes (`bb4c68fc`) |
-| — | Partial failure in one project — others succeed | Per-project transaction isolation |
-| — | `ao start <project>` after `ao stop <project>` hits "already running" | `removeProjectFromRunning()` + `projectNeedsRestart` gate |
-| — | `projectNeedsRestart` false-triggers on path/URL args | `isProjectId` guard: `!isRepoUrl(arg) && !isLocalPath(arg)` |
-| — | Ctrl+C leaves tmux orphans | Signal handler mirrors full `ao stop` cleanup (`b4feda79`) |
+| ID / theme | Scenario                                                              | Where handled                                                    |
+| ---------- | --------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| EC-1       | V1 root has both new and legacy directories simultaneously            | `migrate-storage/inventory.ts`                                   |
+| EC-2       | macOS case-insensitive filesystem collision (`Foo` vs `foo`)          | `64caef04`                                                       |
+| EC-3       | Git worktree files contain absolute paths to old location             | `ff61ee97`                                                       |
+| EC-7       | Re-running migration on a partially-migrated tree                     | `880930a2` (`.migrated` markers, prevent `.migrated.migrated`)   |
+| EC-8       | Active sessions exist during migration                                | Pre-flight check, **bypassed only for `--dry-run`** (`c800c89c`) |
+| EC-14      | Corrupt or unparseable session JSON                                   | Whitelisted JSON parse with rejection (`fd4f969f`)               |
+| EC-27      | Rollback after partial success — preserve already-migrated worktrees  | `fd4f969f`                                                       |
+| —          | Stray worktree recursion (worktree containing worktree path)          | `ff61ee97`                                                       |
+| —          | Empty / orphaned archive directories                                  | Archive removal commits (group C)                                |
+| —          | Stale `running.json` from previous crashed `ao start`                 | Auto-pruned on next read (pre-existing, kept)                    |
+| —          | High-entropy test placeholders triggering gitleaks                    | `31b20ed2`, `3e23c8db` (targeted regex)                          |
+| —          | Two `ao migrate-storage` runs racing                                  | File-locked global config writes (`bb4c68fc`)                    |
+| —          | Partial failure in one project — others succeed                       | Per-project transaction isolation                                |
+| —          | `ao start <project>` after `ao stop <project>` hits "already running" | `removeProjectFromRunning()` + `projectNeedsRestart` gate        |
+| —          | `projectNeedsRestart` false-triggers on path/URL args                 | `isProjectId` guard: `!isRepoUrl(arg) && !isLocalPath(arg)`      |
+| —          | Ctrl+C leaves tmux orphans                                            | Signal handler mirrors full `ao stop` cleanup (`b4feda79`)       |
 
 Each of these has at least one test. **If you change `migrate-storage/`, run** `pnpm --filter @aoagents/ao-core test` **and read the failures carefully** — they're load-bearing.
 
@@ -49,21 +50,25 @@ Each of these has at least one test. **If you change `migrate-storage/`, run** `
 These files have subtle invariants and high blast radius. State which invariants you preserve when modifying them (per `CLAUDE.md`).
 
 ### `packages/core/src/migrate-storage/`
+
 - The order of operations in the per-project transaction is checkpointed for rollback. Reordering = corruption on partial failure.
 - The `.migrated` marker scheme — re-runs depend on it.
 - Git worktree path rewriting regex — intentionally narrow. Broadening it has caused data loss before (`ff61ee97`).
 - Atomic write helpers (temp + rename). Don't substitute direct `fs.writeFile`.
 
 ### `packages/core/src/lifecycle-state.ts` + `lifecycle-manager.ts`
+
 - `state` + `reason` are the source of truth. **Never persist legacy `SessionStatus`.**
-- `deriveLegacyStatus` is a *display-only* read function. Don't introduce write paths through it.
+- `deriveLegacyStatus` is a _display-only_ read function. Don't introduce write paths through it.
 - State transitions have implicit dependencies — see CLAUDE.md "Working Principles → Think Before Coding."
 
 ### `packages/core/src/session-manager.ts`
+
 - `sm.list()` reconciles stale runtimes (`runtime_lost`) — this is what keeps the dashboard honest. Don't short-circuit it.
 - No more archive lookup paths. If you find yourself wanting one, you're solving the wrong problem.
 
 ### `packages/cli/src/commands/start.ts` (includes stop logic — there is no `stop.ts`)
+
 - `last-stop.json` schema includes `otherProjects` for cross-project restore. Adding fields → bump schema, write a migration test.
 - `ao stop <project>` (with arg) **must not** kill the parent process or the dashboard. There's a regression test for this; it caught a real bug (`95cf979d`).
 - `ao stop <project>` calls `removeProjectFromRunning(projectId)` — removing the project from `running.json` so that `ao start <project>` can restart. The `projectNeedsRestart` gate in `ao start` depends on this.
@@ -71,10 +76,12 @@ These files have subtle invariants and high blast radius. State which invariants
 - The `projectNeedsRestart` gate uses an `isProjectId` guard (`!isRepoUrl && !isLocalPath`) to avoid false triggers when `projectArg` is a filesystem path or URL.
 
 ### `packages/cli/src/lib/running-state.ts`
+
 - Advisory lockfile system (`O_EXCL` atomic creation) with jittered backoff and dead-owner cleanup.
 - `removeProjectFromRunning()` — surgically removes a project from `running.json.projects[]`. 6 dedicated tests cover targeted vs full stop semantics.
 
 ### `packages/web/src/components/Dashboard.tsx`
+
 - Sidebar must show all sessions across all projects, regardless of `projectId`. Per-project filtering happens client-side via `projectSessions` (see commit `53e8476f`).
 - SSE 5s interval is hard-coded by constraint C-14. Don't change.
 
@@ -130,7 +137,7 @@ pnpm test:integration   # only if your change touches CLI / lifecycle / migratio
 
 ## Things reviewers explicitly rejected
 
-If you're tempted to do any of these, *don't* — they were proposed in earlier rounds and shot down:
+If you're tempted to do any of these, _don't_ — they were proposed in earlier rounds and shot down:
 
 - Adding a configurable archive directory ("for users who want to keep an archive"). Plugin slot, not config.
 - Keeping `SessionStatus` as a "compatibility field." It was the source of bugs; it stays derived-only.

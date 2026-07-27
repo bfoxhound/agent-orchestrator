@@ -30,16 +30,16 @@ import { realpathSync, existsSync, writeFileSync, readFileSync, mkdirSync } from
  * resolve() when realpathSync fails.
  */
 export function generateConfigHash(configPath: string): string {
-  let resolved: string;
-  try {
-    resolved = realpathSync(configPath);
-  } catch {
-    // File may not exist (remote mode, Docker, pre-creation) — use resolved path
-    resolved = resolve(configPath);
-  }
-  const configDir = dirname(resolved);
-  const hash = createHash("sha256").update(configDir).digest("hex");
-  return hash.slice(0, 12);
+	let resolved: string;
+	try {
+		resolved = realpathSync(configPath);
+	} catch {
+		// File may not exist (remote mode, Docker, pre-creation) — use resolved path
+		resolved = resolve(configPath);
+	}
+	const configDir = dirname(resolved);
+	const hash = createHash("sha256").update(configDir).digest("hex");
+	return hash.slice(0, 12);
 }
 
 /**
@@ -49,7 +49,7 @@ export function generateConfigHash(configPath: string): string {
  * @deprecated New project registrations use generateExternalId() from global-config.ts.
  */
 export function generateProjectId(projectPath: string): string {
-  return basename(projectPath);
+	return basename(projectPath);
 }
 
 /**
@@ -62,28 +62,28 @@ export function generateProjectId(projectPath: string): string {
  * 4. Single word: first 3 chars (integrator → int)
  */
 export function generateSessionPrefix(projectId: string): string {
-  if (projectId.length <= 4) {
-    return projectId.toLowerCase();
-  }
+	if (projectId.length <= 4) {
+		return projectId.toLowerCase();
+	}
 
-  // CamelCase: extract uppercase letters
-  const uppercase = projectId.match(/[A-Z]/g);
-  if (uppercase && uppercase.length > 1) {
-    return uppercase.join("").toLowerCase();
-  }
+	// CamelCase: extract uppercase letters
+	const uppercase = projectId.match(/[A-Z]/g);
+	if (uppercase && uppercase.length > 1) {
+		return uppercase.join("").toLowerCase();
+	}
 
-  // kebab-case or snake_case: use initials
-  if (projectId.includes("-") || projectId.includes("_")) {
-    const separator = projectId.includes("-") ? "-" : "_";
-    return projectId
-      .split(separator)
-      .map((word) => word[0])
-      .join("")
-      .toLowerCase();
-  }
+	// kebab-case or snake_case: use initials
+	if (projectId.includes("-") || projectId.includes("_")) {
+		const separator = projectId.includes("-") ? "-" : "_";
+		return projectId
+			.split(separator)
+			.map((word) => word[0])
+			.join("")
+			.toLowerCase();
+	}
 
-  // Single word: first 3 characters
-  return projectId.slice(0, 3).toLowerCase();
+	// Single word: first 3 characters
+	return projectId.slice(0, 3).toLowerCase();
 }
 
 // =============================================================================
@@ -98,46 +98,46 @@ const SAFE_PROJECT_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
 
 /** Validate a projectId is safe for use as a directory name, shell commands, and tmux sessions. */
 function assertSafeProjectId(projectId: string): void {
-  if (
-    !projectId ||
-    projectId === "." ||
-    projectId === ".." ||
-    projectId.length > MAX_PROJECT_ID_LENGTH ||
-    !SAFE_PROJECT_ID_PATTERN.test(projectId)
-  ) {
-    throw new Error(`Unsafe project ID: "${projectId}"`);
-  }
+	if (
+		!projectId ||
+		projectId === "." ||
+		projectId === ".." ||
+		projectId.length > MAX_PROJECT_ID_LENGTH ||
+		!SAFE_PROJECT_ID_PATTERN.test(projectId)
+	) {
+		throw new Error(`Unsafe project ID: "${projectId}"`);
+	}
 }
 
 /** Get the project directory by project ID. */
 export function getProjectDir(projectId: string): string {
-  assertSafeProjectId(projectId);
-  return join(getAoBaseDir(), "projects", projectId);
+	assertSafeProjectId(projectId);
+	return join(getAoBaseDir(), "projects", projectId);
 }
 
 /** Get the sessions directory for a project (workers only). */
 export function getProjectSessionsDir(projectId: string): string {
-  return join(getProjectDir(projectId), "sessions");
+	return join(getProjectDir(projectId), "sessions");
 }
 
 /** Get the worktrees directory for a project. */
 export function getProjectWorktreesDir(projectId: string): string {
-  return join(getProjectDir(projectId), "worktrees");
+	return join(getProjectDir(projectId), "worktrees");
 }
 
 /** Get the feedback reports directory for a project (V2 layout). */
 export function getProjectFeedbackReportsDir(projectId: string): string {
-  return join(getProjectDir(projectId), "feedback-reports");
+	return join(getProjectDir(projectId), "feedback-reports");
 }
 
 /** Get the orchestrator metadata file path for a project. */
 export function getOrchestratorPath(projectId: string): string {
-  return join(getProjectDir(projectId), "orchestrator.json");
+	return join(getProjectDir(projectId), "orchestrator.json");
 }
 
 /** Get the session metadata file path (.json). */
 export function getSessionPath(projectId: string, sessionId: string): string {
-  return join(getProjectSessionsDir(projectId), `${sessionId}.json`);
+	return join(getProjectSessionsDir(projectId), `${sessionId}.json`);
 }
 
 // =============================================================================
@@ -150,7 +150,7 @@ export function getSessionPath(projectId: string, sessionId: string): string {
  * Format: ~/.agent-orchestrator/{storageKey}
  */
 export function getProjectBaseDir(storageKey: string | undefined): string {
-  return join(expandHome("~/.agent-orchestrator"), requireStorageKey(storageKey));
+	return join(expandHome("~/.agent-orchestrator"), requireStorageKey(storageKey));
 }
 
 /**
@@ -158,8 +158,8 @@ export function getProjectBaseDir(storageKey: string | undefined): string {
  * Format: ~/.agent-orchestrator/{hash}-observability
  */
 export function getObservabilityBaseDir(configPath: string): string {
-  const hash = generateConfigHash(configPath);
-  return join(expandHome("~/.agent-orchestrator"), `${hash}-observability`);
+	const hash = generateConfigHash(configPath);
+	return join(expandHome("~/.agent-orchestrator"), `${hash}-observability`);
 }
 
 /**
@@ -167,7 +167,7 @@ export function getObservabilityBaseDir(configPath: string): string {
  * Get the sessions directory for a project.
  */
 export function getSessionsDir(storageKey: string | undefined): string {
-  return join(getProjectBaseDir(storageKey), "sessions");
+	return join(getProjectBaseDir(storageKey), "sessions");
 }
 
 /**
@@ -175,7 +175,7 @@ export function getSessionsDir(storageKey: string | undefined): string {
  * Get the worktrees directory for a project.
  */
 export function getWorktreesDir(storageKey: string | undefined): string {
-  return join(getProjectBaseDir(storageKey), "worktrees");
+	return join(getProjectBaseDir(storageKey), "worktrees");
 }
 
 /**
@@ -183,7 +183,7 @@ export function getWorktreesDir(storageKey: string | undefined): string {
  * Get the feedback reports directory for a project.
  */
 export function getFeedbackReportsDir(storageKey: string | undefined): string {
-  return join(getProjectBaseDir(storageKey), "feedback-reports");
+	return join(getProjectBaseDir(storageKey), "feedback-reports");
 }
 
 /**
@@ -191,7 +191,7 @@ export function getFeedbackReportsDir(storageKey: string | undefined): string {
  * Get the archive directory for a project (legacy: nested inside sessions/).
  */
 export function getArchiveDir(storageKey: string | undefined): string {
-  return join(getSessionsDir(storageKey), "archive");
+	return join(getSessionsDir(storageKey), "archive");
 }
 
 /**
@@ -199,7 +199,7 @@ export function getArchiveDir(storageKey: string | undefined): string {
  * Get the .origin file path for a project.
  */
 export function getOriginFilePath(storageKey: string | undefined): string {
-  return join(getProjectBaseDir(storageKey), ".origin");
+	return join(getProjectBaseDir(storageKey), ".origin");
 }
 
 /**
@@ -208,7 +208,7 @@ export function getOriginFilePath(storageKey: string | undefined): string {
  * Example: "int-1", "ao-42"
  */
 export function generateSessionName(prefix: string, num: number): string {
-  return `${prefix}-${num}`;
+	return `${prefix}-${num}`;
 }
 
 /**
@@ -219,12 +219,8 @@ export function generateSessionName(prefix: string, num: number): string {
  * Format: {storageKey}-{prefix}-{num}
  * Example: "a3b4c5d6e7f8-int-1"
  */
-export function generateTmuxName(
-  storageKey: string | undefined,
-  prefix: string,
-  num: number,
-): string {
-  return `${requireStorageKey(storageKey)}-${prefix}-${num}`;
+export function generateTmuxName(storageKey: string | undefined, prefix: string, num: number): string {
+	return `${requireStorageKey(storageKey)}-${prefix}-${num}`;
 }
 
 /**
@@ -232,18 +228,18 @@ export function generateTmuxName(
  * Parse a legacy tmux session name (with hash prefix).
  */
 export function parseTmuxName(tmuxName: string): {
-  hash: string;
-  prefix: string;
-  num: number;
+	hash: string;
+	prefix: string;
+	num: number;
 } | null {
-  const match = tmuxName.match(/^([a-f0-9]{12})-([a-zA-Z0-9_-]+)-(\d+)$/);
-  if (!match) return null;
+	const match = tmuxName.match(/^([a-f0-9]{12})-([a-zA-Z0-9_-]+)-(\d+)$/);
+	if (!match) return null;
 
-  return {
-    hash: match[1],
-    prefix: match[2],
-    num: parseInt(match[3], 10),
-  };
+	return {
+		hash: match[1],
+		prefix: match[2],
+		num: parseInt(match[3], 10),
+	};
 }
 
 /**
@@ -252,43 +248,43 @@ export function parseTmuxName(tmuxName: string): {
  * Prefix must match sessionPrefix validation: [a-zA-Z0-9_-]+
  */
 export function parseTmuxNameV2(tmuxName: string): {
-  prefix: string;
-  num: number;
+	prefix: string;
+	num: number;
 } | null {
-  // Greedy match: prefix is everything up to the last -{num}
-  const match = tmuxName.match(/^([a-zA-Z0-9][a-zA-Z0-9_-]*)-(\d+)$/);
-  if (!match) return null;
-  return { prefix: match[1], num: parseInt(match[2], 10) };
+	// Greedy match: prefix is everything up to the last -{num}
+	const match = tmuxName.match(/^([a-zA-Z0-9][a-zA-Z0-9_-]*)-(\d+)$/);
+	if (!match) return null;
+	return { prefix: match[1], num: parseInt(match[2], 10) };
 }
 
 /**
  * Expand ~ to home directory.
  */
 export function expandHome(filepath: string): string {
-  if (filepath.startsWith("~/")) {
-    return join(homedir(), filepath.slice(2));
-  }
-  return filepath;
+	if (filepath.startsWith("~/")) {
+		return join(homedir(), filepath.slice(2));
+	}
+	return filepath;
 }
 
 /** Get the base AO directory (~/.agent-orchestrator/) */
 export function getAoBaseDir(): string {
-  return expandHome("~/.agent-orchestrator");
+	return expandHome("~/.agent-orchestrator");
 }
 
 /** Get the portfolio directory (~/.agent-orchestrator/portfolio/) */
 export function getPortfolioDir(): string {
-  return join(getAoBaseDir(), "portfolio");
+	return join(getAoBaseDir(), "portfolio");
 }
 
 /** Get the portfolio preferences file path */
 export function getPreferencesPath(): string {
-  return join(getPortfolioDir(), "preferences.json");
+	return join(getPortfolioDir(), "preferences.json");
 }
 
 /** Get the portfolio registered projects file path */
 export function getRegisteredPath(): string {
-  return join(getPortfolioDir(), "registered.json");
+	return join(getPortfolioDir(), "registered.json");
 }
 
 /**
@@ -296,31 +292,31 @@ export function getRegisteredPath(): string {
  * Validate and store the .origin file for a project.
  */
 export function validateAndStoreOrigin(configPath: string, storageKey: string): void {
-  const originPath = getOriginFilePath(storageKey);
-  let resolvedConfigPath: string;
-  try {
-    resolvedConfigPath = realpathSync(configPath);
-  } catch {
-    resolvedConfigPath = resolve(configPath);
-  }
+	const originPath = getOriginFilePath(storageKey);
+	let resolvedConfigPath: string;
+	try {
+		resolvedConfigPath = realpathSync(configPath);
+	} catch {
+		resolvedConfigPath = resolve(configPath);
+	}
 
-  if (existsSync(originPath)) {
-    const stored = readFileSync(originPath, "utf-8").trim();
-    if (stored !== resolvedConfigPath) {
-      // Config path changed (local → global migration). Update .origin.
-      writeFileSync(originPath, resolvedConfigPath, "utf-8");
-    }
-  } else {
-    // Create project base directory and .origin file
-    const baseDir = getProjectBaseDir(storageKey);
-    mkdirSync(baseDir, { recursive: true });
-    writeFileSync(originPath, resolvedConfigPath, "utf-8");
-  }
+	if (existsSync(originPath)) {
+		const stored = readFileSync(originPath, "utf-8").trim();
+		if (stored !== resolvedConfigPath) {
+			// Config path changed (local → global migration). Update .origin.
+			writeFileSync(originPath, resolvedConfigPath, "utf-8");
+		}
+	} else {
+		// Create project base directory and .origin file
+		const baseDir = getProjectBaseDir(storageKey);
+		mkdirSync(baseDir, { recursive: true });
+		writeFileSync(originPath, resolvedConfigPath, "utf-8");
+	}
 }
 
 export function requireStorageKey(storageKey: string | undefined): string {
-  if (!storageKey) {
-    throw new Error("storageKey is required");
-  }
-  return storageKey;
+	if (!storageKey) {
+		throw new Error("storageKey is required");
+	}
+	return storageKey;
 }

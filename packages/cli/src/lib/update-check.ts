@@ -14,12 +14,12 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import {
-  getInstalledAoVersion,
-  getUpdateCheckCachePath,
-  isVersionOutdated as coreIsVersionOutdated,
-  loadGlobalConfig,
-  type UpdateChannel,
-  type InstallMethodOverride,
+	getInstalledAoVersion,
+	getUpdateCheckCachePath,
+	isVersionOutdated as coreIsVersionOutdated,
+	loadGlobalConfig,
+	type UpdateChannel,
+	type InstallMethodOverride,
 } from "@aoagents/ao-core";
 import { getCliVersion } from "../options/version.js";
 
@@ -27,40 +27,34 @@ import { getCliVersion } from "../options/version.js";
 // Types
 // ---------------------------------------------------------------------------
 
-export type InstallMethod =
-  | "git"
-  | "npm-global"
-  | "pnpm-global"
-  | "bun-global"
-  | "homebrew"
-  | "unknown";
+export type InstallMethod = "git" | "npm-global" | "pnpm-global" | "bun-global" | "homebrew" | "unknown";
 
 export interface UpdateInfo {
-  currentVersion: string;
-  latestVersion: string | null;
-  isOutdated: boolean;
-  installMethod: InstallMethod;
-  recommendedCommand: string;
-  checkedAt: string | null;
-  channel: UpdateChannel;
+	currentVersion: string;
+	latestVersion: string | null;
+	isOutdated: boolean;
+	installMethod: InstallMethod;
+	recommendedCommand: string;
+	checkedAt: string | null;
+	channel: UpdateChannel;
 }
 
 export interface CacheData {
-  latestVersion: string;
-  checkedAt: string;
-  currentVersionAtCheck: string;
-  /**
-   * Cache scoping. The cache stores exactly one entry — entries for a
-   * different install method or channel are treated as misses, forcing a
-   * refresh against the relevant source (git fetch / npm registry).
-   */
-  installMethod?: InstallMethod;
-  channel?: UpdateChannel;
-  /** For non-git installs, derived from `isVersionOutdated(current, latest)`. */
-  isOutdated?: boolean;
-  /** For git installs, lets us cheaply detect a manual `git pull` since the last check. */
-  currentRevisionAtCheck?: string;
-  latestRevisionAtCheck?: string;
+	latestVersion: string;
+	checkedAt: string;
+	currentVersionAtCheck: string;
+	/**
+	 * Cache scoping. The cache stores exactly one entry — entries for a
+	 * different install method or channel are treated as misses, forcing a
+	 * refresh against the relevant source (git fetch / npm registry).
+	 */
+	installMethod?: InstallMethod;
+	channel?: UpdateChannel;
+	/** For non-git installs, derived from `isVersionOutdated(current, latest)`. */
+	isOutdated?: boolean;
+	/** For git installs, lets us cheaply detect a manual `git pull` since the last check. */
+	currentRevisionAtCheck?: string;
+	latestRevisionAtCheck?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -90,22 +84,22 @@ const execFileAsync = promisify(execFile);
  * and the onboarding flow promotes users to "stable" or "nightly" explicitly.
  */
 export function resolveUpdateChannel(): UpdateChannel {
-  try {
-    const config = loadGlobalConfig();
-    return config?.updateChannel ?? "manual";
-  } catch {
-    return "manual";
-  }
+	try {
+		const config = loadGlobalConfig();
+		return config?.updateChannel ?? "manual";
+	} catch {
+		return "manual";
+	}
 }
 
 /** Read the install-method override from global config (if any). */
 export function resolveInstallMethodOverride(): InstallMethodOverride | undefined {
-  try {
-    const config = loadGlobalConfig();
-    return config?.installMethod;
-  } catch {
-    return undefined;
-  }
+	try {
+		const config = loadGlobalConfig();
+		return config?.installMethod;
+	} catch {
+		return undefined;
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -113,41 +107,41 @@ export function resolveInstallMethodOverride(): InstallMethodOverride | undefine
 // ---------------------------------------------------------------------------
 
 export function hasNodeModulesAncestor(resolvedPath: string): boolean {
-  return resolvedPath.includes("/node_modules/") || resolvedPath.includes("\\node_modules\\");
+	return resolvedPath.includes("/node_modules/") || resolvedPath.includes("\\node_modules\\");
 }
 
 function readPackageName(packageJsonPath: string): string | null {
-  try {
-    const raw = readFileSync(packageJsonPath, "utf-8");
-    const parsed = JSON.parse(raw) as { name?: unknown };
-    return typeof parsed.name === "string" ? parsed.name : null;
-  } catch {
-    return null;
-  }
+	try {
+		const raw = readFileSync(packageJsonPath, "utf-8");
+		const parsed = JSON.parse(raw) as { name?: unknown };
+		return typeof parsed.name === "string" ? parsed.name : null;
+	} catch {
+		return null;
+	}
 }
 
 function getSourceRepoRoot(resolvedPath: string): string {
-  return resolve(dirname(resolvedPath), "../../../../");
+	return resolve(dirname(resolvedPath), "../../../../");
 }
 
 export function getCurrentRepoRoot(): string {
-  return getSourceRepoRoot(fileURLToPath(import.meta.url));
+	return getSourceRepoRoot(fileURLToPath(import.meta.url));
 }
 
 export function isAgentOrchestratorRepoRoot(root: string): boolean {
-  if (!existsSync(resolve(root, ".git"))) {
-    return false;
-  }
+	if (!existsSync(resolve(root, ".git"))) {
+		return false;
+	}
 
-  return readPackageName(resolve(root, "packages", "ao", "package.json")) === "@aoagents/ao";
+	return readPackageName(resolve(root, "packages", "ao", "package.json")) === "@aoagents/ao";
 }
 
 export function isAoCliPackageRoot(root: string): boolean {
-  if (!existsSync(resolve(root, "dist", "index.js"))) {
-    return false;
-  }
+	if (!existsSync(resolve(root, "dist", "index.js"))) {
+		return false;
+	}
 
-  return readPackageName(resolve(root, "package.json")) === "@aoagents/ao-cli";
+	return readPackageName(resolve(root, "package.json")) === "@aoagents/ao-cli";
 }
 
 /**
@@ -159,50 +153,44 @@ export function isAoCliPackageRoot(root: string): boolean {
  * `~/.bun/install/global/` and is detected the same way.
  */
 export function classifyInstallPath(resolvedPath: string): InstallMethod {
-  // Homebrew installs of the `ao` formula land under /Cellar/ao/<version>/.
-  // Detect this BEFORE the generic node_modules walk, because brew installs
-  // also live under .../lib/node_modules/. We don't auto-install for brew —
-  // that would clobber the symlinks brew owns.
-  if (resolvedPath.includes("/Cellar/ao/") || resolvedPath.includes("\\Cellar\\ao\\")) {
-    return "homebrew";
-  }
+	// Homebrew installs of the `ao` formula land under /Cellar/ao/<version>/.
+	// Detect this BEFORE the generic node_modules walk, because brew installs
+	// also live under .../lib/node_modules/. We don't auto-install for brew —
+	// that would clobber the symlinks brew owns.
+	if (resolvedPath.includes("/Cellar/ao/") || resolvedPath.includes("\\Cellar\\ao\\")) {
+		return "homebrew";
+	}
 
-  // Bun's global install layout: ~/.bun/install/global/node_modules/...
-  if (
-    resolvedPath.includes("/.bun/install/global/") ||
-    resolvedPath.includes("\\.bun\\install\\global\\")
-  ) {
-    return "bun-global";
-  }
+	// Bun's global install layout: ~/.bun/install/global/node_modules/...
+	if (resolvedPath.includes("/.bun/install/global/") || resolvedPath.includes("\\.bun\\install\\global\\")) {
+		return "bun-global";
+	}
 
-  if (hasNodeModulesAncestor(resolvedPath)) {
-    const isPnpmGlobal =
-      resolvedPath.includes("/pnpm/global/") || resolvedPath.includes("\\pnpm\\global\\");
-    if (isPnpmGlobal) return "pnpm-global";
+	if (hasNodeModulesAncestor(resolvedPath)) {
+		const isPnpmGlobal = resolvedPath.includes("/pnpm/global/") || resolvedPath.includes("\\pnpm\\global\\");
+		if (isPnpmGlobal) return "pnpm-global";
 
-    const isNpmGlobal =
-      resolvedPath.includes("/lib/node_modules/") ||
-      resolvedPath.includes("\\lib\\node_modules\\");
-    if (isNpmGlobal) return "npm-global";
+		const isNpmGlobal = resolvedPath.includes("/lib/node_modules/") || resolvedPath.includes("\\lib\\node_modules\\");
+		if (isNpmGlobal) return "npm-global";
 
-    return "unknown";
-  }
+		return "unknown";
+	}
 
-  // Running from a source checkout → git install
-  // Walk up from packages/cli/dist/lib/ (or src/lib/) to repo root
-  const repoRoot = getSourceRepoRoot(resolvedPath);
-  if (isAgentOrchestratorRepoRoot(repoRoot)) {
-    return "git";
-  }
+	// Running from a source checkout → git install
+	// Walk up from packages/cli/dist/lib/ (or src/lib/) to repo root
+	const repoRoot = getSourceRepoRoot(resolvedPath);
+	if (isAgentOrchestratorRepoRoot(repoRoot)) {
+		return "git";
+	}
 
-  return "unknown";
+	return "unknown";
 }
 
 /** Detect how the running `ao` binary was installed. Honors `installMethod` override. */
 export function detectInstallMethod(): InstallMethod {
-  const override = resolveInstallMethodOverride();
-  if (override) return override;
-  return classifyInstallPath(fileURLToPath(import.meta.url));
+	const override = resolveInstallMethodOverride();
+	if (override) return override;
+	return classifyInstallPath(fileURLToPath(import.meta.url));
 }
 
 // ---------------------------------------------------------------------------
@@ -217,9 +205,9 @@ export function detectInstallMethod(): InstallMethod {
  * neither package is in `node_modules` (test/dev edge case).
  */
 export function getCurrentVersion(): string {
-  const fromCore = getInstalledAoVersion();
-  if (fromCore !== "0.0.0") return fromCore;
-  return getCliVersion();
+	const fromCore = getInstalledAoVersion();
+	if (fromCore !== "0.0.0") return fromCore;
+	return getCliVersion();
 }
 
 // ---------------------------------------------------------------------------
@@ -227,19 +215,19 @@ export function getCurrentVersion(): string {
 // ---------------------------------------------------------------------------
 
 export interface GitUpdateTarget {
-  remote: string;
-  branch: string;
-  ref: string;
+	remote: string;
+	branch: string;
+	ref: string;
 }
 
 export function getGitUpdateTarget(): GitUpdateTarget {
-  const remote = process.env["AO_UPDATE_GIT_REMOTE"] || DEFAULT_GIT_REMOTE;
-  const branch = process.env["AO_UPDATE_GIT_BRANCH"] || DEFAULT_GIT_BRANCH;
-  return { remote, branch, ref: `${remote}/${branch}` };
+	const remote = process.env["AO_UPDATE_GIT_REMOTE"] || DEFAULT_GIT_REMOTE;
+	const branch = process.env["AO_UPDATE_GIT_BRANCH"] || DEFAULT_GIT_BRANCH;
+	return { remote, branch, ref: `${remote}/${branch}` };
 }
 
 export function getGitUpdateRef(): string {
-  return getGitUpdateTarget().ref;
+	return getGitUpdateTarget().ref;
 }
 
 // ---------------------------------------------------------------------------
@@ -256,32 +244,29 @@ export function getGitUpdateRef(): string {
  * a notice so the user runs it themselves — auto-running `npm install -g`
  * inside a brew prefix overwrites brew's symlinks.
  */
-export function getUpdateCommand(
-  method: InstallMethod,
-  channel: UpdateChannel = "stable",
-): string {
-  // "manual" channel maps to "stable" for the install command — the channel
-  // affects when we check, not which tag manual installers should pick.
-  const tag = channel === "nightly" ? "nightly" : "latest";
-  switch (method) {
-    case "git":
-      return "ao update";
-    case "npm-global":
-      return `npm install -g @aoagents/ao@${tag}`;
-    case "pnpm-global":
-      return `pnpm add -g @aoagents/ao@${tag}`;
-    case "bun-global":
-      return `bun add -g @aoagents/ao@${tag}`;
-    case "homebrew":
-      return "brew upgrade ao";
-    case "unknown":
-      return `npm install -g @aoagents/ao@${tag}`;
-  }
+export function getUpdateCommand(method: InstallMethod, channel: UpdateChannel = "stable"): string {
+	// "manual" channel maps to "stable" for the install command — the channel
+	// affects when we check, not which tag manual installers should pick.
+	const tag = channel === "nightly" ? "nightly" : "latest";
+	switch (method) {
+		case "git":
+			return "ao update";
+		case "npm-global":
+			return `npm install -g @aoagents/ao@${tag}`;
+		case "pnpm-global":
+			return `pnpm add -g @aoagents/ao@${tag}`;
+		case "bun-global":
+			return `bun add -g @aoagents/ao@${tag}`;
+		case "homebrew":
+			return "brew upgrade ao";
+		case "unknown":
+			return `npm install -g @aoagents/ao@${tag}`;
+	}
 }
 
 /** True when the install method requires a manual user action (no auto-install). */
 export function isManualOnlyInstall(method: InstallMethod): boolean {
-  return method === "homebrew";
+	return method === "homebrew";
 }
 
 // ---------------------------------------------------------------------------
@@ -290,13 +275,13 @@ export function isManualOnlyInstall(method: InstallMethod): boolean {
 
 /** Directory holding the update cache. Re-exported for ao doctor / CLI smoke tests. */
 export function getCacheDir(): string {
-  // dirname(getUpdateCheckCachePath()) keeps this in lock-step with core's
-  // canonical path resolver.
-  return dirname(getUpdateCheckCachePath());
+	// dirname(getUpdateCheckCachePath()) keeps this in lock-step with core's
+	// canonical path resolver.
+	return dirname(getUpdateCheckCachePath());
 }
 
 function getCachePath(): string {
-  return getUpdateCheckCachePath();
+	return getUpdateCheckCachePath();
 }
 
 /**
@@ -308,71 +293,71 @@ function getCachePath(): string {
  * 0.5.0 vs nightly 0.5.0-nightly-abc; git's `origin/main` ref vs npm tag).
  */
 export function readCachedUpdateInfo(
-  installMethod: InstallMethod = detectInstallMethod(),
-  channel?: UpdateChannel,
+	installMethod: InstallMethod = detectInstallMethod(),
+	channel?: UpdateChannel,
 ): CacheData | null {
-  try {
-    const raw = readFileSync(getCachePath(), "utf-8");
-    const data = JSON.parse(raw) as CacheData;
+	try {
+		const raw = readFileSync(getCachePath(), "utf-8");
+		const data = JSON.parse(raw) as CacheData;
 
-    if (!data.latestVersion || !data.checkedAt) return null;
+		if (!data.latestVersion || !data.checkedAt) return null;
 
-    // Legacy cache entries predate install-method scoping — treat as unsafe.
-    if (!data.installMethod) return null;
-    if (data.installMethod !== installMethod) return null;
+		// Legacy cache entries predate install-method scoping — treat as unsafe.
+		if (!data.installMethod) return null;
+		if (data.installMethod !== installMethod) return null;
 
-    // Channel scoping. When the caller passes an explicit channel, the cache
-    // entry MUST advertise its own channel and that channel MUST match. A
-    // legacy entry without a `channel` field (written before channel scoping
-    // landed) is treated as a miss — otherwise a stable→nightly switch would
-    // keep returning the pre-switch latestVersion until the TTL expired.
-    if (channel) {
-      if (!data.channel) return null;
-      if (data.channel !== channel) return null;
-    }
+		// Channel scoping. When the caller passes an explicit channel, the cache
+		// entry MUST advertise its own channel and that channel MUST match. A
+		// legacy entry without a `channel` field (written before channel scoping
+		// landed) is treated as a miss — otherwise a stable→nightly switch would
+		// keep returning the pre-switch latestVersion until the TTL expired.
+		if (channel) {
+			if (!data.channel) return null;
+			if (data.channel !== channel) return null;
+		}
 
-    // Cache is stale if user upgraded since the check
-    const currentVersion = getCurrentVersion();
-    if (data.currentVersionAtCheck && data.currentVersionAtCheck !== currentVersion) {
-      return null;
-    }
+		// Cache is stale if user upgraded since the check
+		const currentVersion = getCurrentVersion();
+		if (data.currentVersionAtCheck && data.currentVersionAtCheck !== currentVersion) {
+			return null;
+		}
 
-    if (installMethod === "git" && data.currentRevisionAtCheck) {
-      try {
-        if (runGit(["rev-parse", "HEAD"], getCurrentRepoRoot()) !== data.currentRevisionAtCheck) {
-          return null;
-        }
-      } catch {
-        return null;
-      }
-    }
+		if (installMethod === "git" && data.currentRevisionAtCheck) {
+			try {
+				if (runGit(["rev-parse", "HEAD"], getCurrentRepoRoot()) !== data.currentRevisionAtCheck) {
+					return null;
+				}
+			} catch {
+				return null;
+			}
+		}
 
-    // Cache expired
-    const age = Date.now() - new Date(data.checkedAt).getTime();
-    if (age > CACHE_TTL_MS) return null;
+		// Cache expired
+		const age = Date.now() - new Date(data.checkedAt).getTime();
+		if (age > CACHE_TTL_MS) return null;
 
-    return data;
-  } catch {
-    return null;
-  }
+		return data;
+	} catch {
+		return null;
+	}
 }
 
 export function writeCache(data: CacheData): void {
-  try {
-    const dir = getCacheDir();
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(getCachePath(), JSON.stringify(data, null, 2));
-  } catch {
-    // Best-effort — don't crash if cache dir is unwritable
-  }
+	try {
+		const dir = getCacheDir();
+		mkdirSync(dir, { recursive: true });
+		writeFileSync(getCachePath(), JSON.stringify(data, null, 2));
+	} catch {
+		// Best-effort — don't crash if cache dir is unwritable
+	}
 }
 
 export function invalidateCache(): void {
-  try {
-    unlinkSync(getCachePath());
-  } catch {
-    // File might not exist — that's fine
-  }
+	try {
+		unlinkSync(getCachePath());
+	} catch {
+		// File might not exist — that's fine
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -380,42 +365,40 @@ export function invalidateCache(): void {
 // ---------------------------------------------------------------------------
 
 export interface GitLatestState {
-  ref: string;
-  headRevision: string;
-  latestRevision: string;
-  isBehind: boolean;
+	ref: string;
+	headRevision: string;
+	latestRevision: string;
+	isBehind: boolean;
 }
 
 function runGit(args: string[], cwd: string): string {
-  return execFileSync("git", args, {
-    cwd,
-    encoding: "utf-8",
-    stdio: ["ignore", "pipe", "ignore"],
-  }).trim();
+	return execFileSync("git", args, {
+		cwd,
+		encoding: "utf-8",
+		stdio: ["ignore", "pipe", "ignore"],
+	}).trim();
 }
 
-export async function fetchGitLatestState(
-  repoRoot = getCurrentRepoRoot(),
-): Promise<GitLatestState | null> {
-  try {
-    const { remote, branch, ref } = getGitUpdateTarget();
+export async function fetchGitLatestState(repoRoot = getCurrentRepoRoot()): Promise<GitLatestState | null> {
+	try {
+		const { remote, branch, ref } = getGitUpdateTarget();
 
-    await execFileAsync("git", ["fetch", remote, branch], { cwd: repoRoot });
-    const headRevision = runGit(["rev-parse", "HEAD"], repoRoot);
-    const latestRevision = runGit(["rev-parse", ref], repoRoot);
+		await execFileAsync("git", ["fetch", remote, branch], { cwd: repoRoot });
+		const headRevision = runGit(["rev-parse", "HEAD"], repoRoot);
+		const latestRevision = runGit(["rev-parse", ref], repoRoot);
 
-    let isBehind = false;
-    try {
-      runGit(["merge-base", "--is-ancestor", "HEAD", ref], repoRoot);
-      isBehind = headRevision !== latestRevision;
-    } catch {
-      isBehind = false;
-    }
+		let isBehind = false;
+		try {
+			runGit(["merge-base", "--is-ancestor", "HEAD", ref], repoRoot);
+			isBehind = headRevision !== latestRevision;
+		} catch {
+			isBehind = false;
+		}
 
-    return { ref, headRevision, latestRevision, isBehind };
-  } catch {
-    return null;
-  }
+		return { ref, headRevision, latestRevision, isBehind };
+	} catch {
+		return null;
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -430,32 +413,30 @@ export async function fetchGitLatestState(
  *   stable / manual → dist-tags.latest
  *   nightly         → dist-tags.nightly  (falls back to latest if no nightly tag)
  */
-export async function fetchLatestVersion(
-  channel: UpdateChannel = "stable",
-): Promise<string | null> {
-  try {
-    const response = await fetch(REGISTRY_PACKAGE_URL, {
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-      headers: { Accept: "application/json" },
-    });
-    if (!response.ok) return null;
-    const data = (await response.json()) as { "dist-tags"?: Record<string, unknown> };
-    const tags = data["dist-tags"];
-    if (!tags || typeof tags !== "object") return null;
+export async function fetchLatestVersion(channel: UpdateChannel = "stable"): Promise<string | null> {
+	try {
+		const response = await fetch(REGISTRY_PACKAGE_URL, {
+			signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+			headers: { Accept: "application/json" },
+		});
+		if (!response.ok) return null;
+		const data = (await response.json()) as { "dist-tags"?: Record<string, unknown> };
+		const tags = data["dist-tags"];
+		if (!tags || typeof tags !== "object") return null;
 
-    const tag = channel === "nightly" ? "nightly" : "latest";
-    const value = tags[tag];
-    if (typeof value === "string") return value;
+		const tag = channel === "nightly" ? "nightly" : "latest";
+		const value = tags[tag];
+		if (typeof value === "string") return value;
 
-    // Nightly tag missing? Fall back to latest so the dashboard isn't broken
-    // before the first nightly publishes.
-    if (tag === "nightly" && typeof tags["latest"] === "string") {
-      return tags["latest"];
-    }
-    return null;
-  } catch {
-    return null;
-  }
+		// Nightly tag missing? Fall back to latest so the dashboard isn't broken
+		// before the first nightly publishes.
+		if (tag === "nightly" && typeof tags["latest"] === "string") {
+			return tags["latest"];
+		}
+		return null;
+	} catch {
+		return null;
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -474,85 +455,85 @@ export async function fetchLatestVersion(
  * background refresh respect the channel and stay quiet.
  */
 export async function checkForUpdate(opts?: {
-  force?: boolean;
-  channel?: UpdateChannel;
-  installMethod?: InstallMethod;
-  repoRoot?: string;
+	force?: boolean;
+	channel?: UpdateChannel;
+	installMethod?: InstallMethod;
+	repoRoot?: string;
 }): Promise<UpdateInfo> {
-  const channel = opts?.channel ?? resolveUpdateChannel();
-  const currentVersion = getCurrentVersion();
-  const installMethod = opts?.installMethod ?? detectInstallMethod();
-  const recommendedCommand = getUpdateCommand(installMethod, channel);
+	const channel = opts?.channel ?? resolveUpdateChannel();
+	const currentVersion = getCurrentVersion();
+	const installMethod = opts?.installMethod ?? detectInstallMethod();
+	const recommendedCommand = getUpdateCommand(installMethod, channel);
 
-  if (!opts?.force) {
-    const cached = readCachedUpdateInfo(installMethod, channel);
-    if (cached) {
-      return {
-        currentVersion,
-        latestVersion: cached.latestVersion,
-        isOutdated:
-          cached.installMethod === "git"
-            ? cached.isOutdated === true
-            : isVersionOutdated(currentVersion, cached.latestVersion),
-        installMethod,
-        recommendedCommand,
-        checkedAt: cached.checkedAt,
-        channel,
-      };
-    }
-  }
+	if (!opts?.force) {
+		const cached = readCachedUpdateInfo(installMethod, channel);
+		if (cached) {
+			return {
+				currentVersion,
+				latestVersion: cached.latestVersion,
+				isOutdated:
+					cached.installMethod === "git"
+						? cached.isOutdated === true
+						: isVersionOutdated(currentVersion, cached.latestVersion),
+				installMethod,
+				recommendedCommand,
+				checkedAt: cached.checkedAt,
+				channel,
+			};
+		}
+	}
 
-  const now = new Date().toISOString();
+	const now = new Date().toISOString();
 
-  if (installMethod === "git") {
-    const gitState = await fetchGitLatestState(opts?.repoRoot);
-    if (gitState) {
-      writeCache({
-        latestVersion: gitState.ref,
-        checkedAt: now,
-        currentVersionAtCheck: currentVersion,
-        installMethod,
-        channel,
-        isOutdated: gitState.isBehind,
-        currentRevisionAtCheck: gitState.headRevision,
-        latestRevisionAtCheck: gitState.latestRevision,
-      });
-    }
+	if (installMethod === "git") {
+		const gitState = await fetchGitLatestState(opts?.repoRoot);
+		if (gitState) {
+			writeCache({
+				latestVersion: gitState.ref,
+				checkedAt: now,
+				currentVersionAtCheck: currentVersion,
+				installMethod,
+				channel,
+				isOutdated: gitState.isBehind,
+				currentRevisionAtCheck: gitState.headRevision,
+				latestRevisionAtCheck: gitState.latestRevision,
+			});
+		}
 
-    return {
-      currentVersion,
-      latestVersion: gitState?.ref ?? null,
-      isOutdated: gitState?.isBehind ?? false,
-      installMethod,
-      recommendedCommand,
-      checkedAt: gitState ? now : null,
-      channel,
-    };
-  }
+		return {
+			currentVersion,
+			latestVersion: gitState?.ref ?? null,
+			isOutdated: gitState?.isBehind ?? false,
+			installMethod,
+			recommendedCommand,
+			checkedAt: gitState ? now : null,
+			channel,
+		};
+	}
 
-  // npm/pnpm/bun/unknown installs use the npm registry as their update channel.
-  const latestVersion = await fetchLatestVersion(channel);
+	// npm/pnpm/bun/unknown installs use the npm registry as their update channel.
+	const latestVersion = await fetchLatestVersion(channel);
 
-  if (latestVersion) {
-    writeCache({
-      latestVersion,
-      checkedAt: now,
-      currentVersionAtCheck: currentVersion,
-      installMethod,
-      channel,
-      isOutdated: isVersionOutdated(currentVersion, latestVersion),
-    });
-  }
+	if (latestVersion) {
+		writeCache({
+			latestVersion,
+			checkedAt: now,
+			currentVersionAtCheck: currentVersion,
+			installMethod,
+			channel,
+			isOutdated: isVersionOutdated(currentVersion, latestVersion),
+		});
+	}
 
-  return {
-    currentVersion,
-    latestVersion,
-    isOutdated: latestVersion ? isVersionOutdated(currentVersion, latestVersion) : false,
-    installMethod,
-    recommendedCommand,
-    checkedAt: latestVersion ? now : null,
-    channel,
-  };
+	return {
+		currentVersion,
+		latestVersion,
+		isOutdated: latestVersion ? isVersionOutdated(currentVersion, latestVersion) : false,
+		installMethod,
+		recommendedCommand,
+		checkedAt: latestVersion ? now : null,
+		channel,
+	};
 }
 
 // ---------------------------------------------------------------------------
@@ -567,34 +548,32 @@ export async function checkForUpdate(opts?: {
  * the suggested install command picks `@nightly` instead of `@latest`.
  */
 export function maybeShowUpdateNotice(): void {
-  if (!process.stderr.isTTY) return;
-  if (process.env["AO_NO_UPDATE_NOTIFIER"] === "1") return;
-  if (process.env["CI"] || process.env["AGENT_ORCHESTRATOR_CI"]) return;
+	if (!process.stderr.isTTY) return;
+	if (process.env["AO_NO_UPDATE_NOTIFIER"] === "1") return;
+	if (process.env["CI"] || process.env["AGENT_ORCHESTRATOR_CI"]) return;
 
-  const skipArgs = ["update", "doctor", "--version", "-V", "--help", "-h"];
-  if (process.argv.some((arg) => skipArgs.includes(arg))) return;
+	const skipArgs = ["update", "doctor", "--version", "-V", "--help", "-h"];
+	if (process.argv.some((arg) => skipArgs.includes(arg))) return;
 
-  const channel = resolveUpdateChannel();
-  if (channel === "manual") return;
+	const channel = resolveUpdateChannel();
+	if (channel === "manual") return;
 
-  const installMethod = detectInstallMethod();
-  const cached = readCachedUpdateInfo(installMethod, channel);
-  if (!cached) return;
+	const installMethod = detectInstallMethod();
+	const cached = readCachedUpdateInfo(installMethod, channel);
+	if (!cached) return;
 
-  const currentVersion = getCurrentVersion();
-  const isOutdated =
-    installMethod === "git"
-      ? cached.isOutdated === true
-      : isVersionOutdated(currentVersion, cached.latestVersion);
-  if (!isOutdated) return;
+	const currentVersion = getCurrentVersion();
+	const isOutdated =
+		installMethod === "git" ? cached.isOutdated === true : isVersionOutdated(currentVersion, cached.latestVersion);
+	if (!isOutdated) return;
 
-  const channelSuffix = channel === "nightly" ? " (nightly)" : "";
-  const command = getUpdateCommand(installMethod, channel);
-  const message =
-    installMethod === "git"
-      ? `\nUpdate available${channelSuffix} from ${cached.latestVersion} — Run: ${command}\n\n`
-      : `\nUpdate available${channelSuffix}: ${currentVersion} → ${cached.latestVersion} — Run: ${command}\n\n`;
-  process.stderr.write(message);
+	const channelSuffix = channel === "nightly" ? " (nightly)" : "";
+	const command = getUpdateCommand(installMethod, channel);
+	const message =
+		installMethod === "git"
+			? `\nUpdate available${channelSuffix} from ${cached.latestVersion} — Run: ${command}\n\n`
+			: `\nUpdate available${channelSuffix}: ${currentVersion} → ${cached.latestVersion} — Run: ${command}\n\n`;
+	process.stderr.write(message);
 }
 
 /**
@@ -602,11 +581,11 @@ export function maybeShowUpdateNotice(): void {
  * so users who opted out don't generate any registry traffic.
  */
 export function scheduleBackgroundRefresh(): void {
-  if (resolveUpdateChannel() === "manual") return;
-  const timer = setTimeout(() => {
-    checkForUpdate().catch(() => {});
-  }, 0);
-  timer.unref();
+	if (resolveUpdateChannel() === "manual") return;
+	const timer = setTimeout(() => {
+		checkForUpdate().catch(() => {});
+	}, 0);
+	timer.unref();
 }
 
 // ---------------------------------------------------------------------------

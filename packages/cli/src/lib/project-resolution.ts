@@ -1,12 +1,12 @@
 import { isAbsolute, relative, resolve } from "node:path";
 
 interface ProjectWithPath {
-  path: string;
+	path: string;
 }
 
 function isWithinProject(projectPath: string, currentDir: string): boolean {
-  const relativePath = relative(projectPath, currentDir);
-  return relativePath === "" || (!relativePath.startsWith("..") && !isAbsolute(relativePath));
+	const relativePath = relative(projectPath, currentDir);
+	return relativePath === "" || (!relativePath.startsWith("..") && !isAbsolute(relativePath));
 }
 
 /**
@@ -14,14 +14,14 @@ function isWithinProject(projectPath: string, currentDir: string): boolean {
  * When multiple project paths contain the cwd, prefer the deepest match.
  */
 export function findProjectForDirectory<T extends ProjectWithPath>(
-  projects: Record<string, T>,
-  currentDir: string,
+	projects: Record<string, T>,
+	currentDir: string,
 ): string | null {
-  const resolvedCurrentDir = resolve(currentDir);
+	const resolvedCurrentDir = resolve(currentDir);
 
-  const matches = Object.entries(projects)
-    .filter(([, project]) => isWithinProject(resolve(project.path), resolvedCurrentDir))
-    .sort(([, a], [, b]) => resolve(b.path).length - resolve(a.path).length);
+	const matches = Object.entries(projects)
+		.filter(([, project]) => isWithinProject(resolve(project.path), resolvedCurrentDir))
+		.sort(([, a], [, b]) => resolve(b.path).length - resolve(a.path).length);
 
-  return matches[0]?.[0] ?? null;
+	return matches[0]?.[0] ?? null;
 }

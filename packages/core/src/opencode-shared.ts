@@ -39,9 +39,9 @@ let cachedOpenCodeTmpDir: string | null = null;
  * base dir so a stray sweep cannot touch unrelated files.
  */
 export function getOpenCodeTmpDir(): string {
-  if (cachedOpenCodeTmpDir) return cachedOpenCodeTmpDir;
-  cachedOpenCodeTmpDir = join(getAoBaseDir(), ".bun-tmp");
-  return cachedOpenCodeTmpDir;
+	if (cachedOpenCodeTmpDir) return cachedOpenCodeTmpDir;
+	cachedOpenCodeTmpDir = join(getAoBaseDir(), ".bun-tmp");
+	return cachedOpenCodeTmpDir;
 }
 
 /**
@@ -53,14 +53,14 @@ export function getOpenCodeTmpDir(): string {
  * OS default temp dir, which is the pre-PR behavior.
  */
 export function ensureOpenCodeTmpDir(): string {
-  const dir = getOpenCodeTmpDir();
-  try {
-    mkdirSync(dir, { recursive: true });
-  } catch {
-    // Best-effort. If creation fails opencode still works; we just leak to
-    // the system temp dir as before.
-  }
-  return dir;
+	const dir = getOpenCodeTmpDir();
+	try {
+		mkdirSync(dir, { recursive: true });
+	} catch {
+		// Best-effort. If creation fails opencode still works; we just leak to
+		// the system temp dir as before.
+	}
+	return dir;
 }
 
 /**
@@ -69,17 +69,15 @@ export function ensureOpenCodeTmpDir(): string {
  * Setting both `TMPDIR` and `TMP`/`TEMP` covers POSIX (TMPDIR) and Windows
  * fallbacks. Bun honors `TMPDIR` for its embedded shared-library extraction.
  */
-export function getOpenCodeChildEnv(
-  extra?: NodeJS.ProcessEnv,
-): NodeJS.ProcessEnv {
-  const dir = ensureOpenCodeTmpDir();
-  return {
-    ...process.env,
-    TMPDIR: dir,
-    TMP: dir,
-    TEMP: dir,
-    ...extra,
-  };
+export function getOpenCodeChildEnv(extra?: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+	const dir = ensureOpenCodeTmpDir();
+	return {
+		...process.env,
+		TMPDIR: dir,
+		TMP: dir,
+		TEMP: dir,
+		...extra,
+	};
 }
 
 // -----------------------------------------------------------------------------
@@ -87,12 +85,12 @@ export function getOpenCodeChildEnv(
 // -----------------------------------------------------------------------------
 
 export interface OpenCodeSessionListEntry {
-  id: string;
-  title: string;
-  /** Raw `updated` field as emitted by opencode (string or number). */
-  updated?: string | number;
-  /** Normalized epoch ms, parsed from `updated`. */
-  updatedAt?: number;
+	id: string;
+	title: string;
+	/** Raw `updated` field as emitted by opencode (string or number). */
+	updated?: string | number;
+	/** Normalized epoch ms, parsed from `updated`. */
+	updatedAt?: number;
 }
 
 /**
@@ -112,51 +110,48 @@ export const OPENCODE_SESSION_LIST_CACHE_TTL_MS = 500;
 const OPENCODE_SESSION_LIST_DEFAULT_TIMEOUT_MS = 30_000;
 
 interface OpenCodeSessionListCache {
-  entries: OpenCodeSessionListEntry[];
-  timestamp: number;
-  promise?: Promise<OpenCodeSessionListEntry[]>;
+	entries: OpenCodeSessionListEntry[];
+	timestamp: number;
+	promise?: Promise<OpenCodeSessionListEntry[]>;
 }
 
 let sessionListCache: OpenCodeSessionListCache | null = null;
 
 function parseUpdatedToEpochMs(value: unknown): number | undefined {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value !== "string") return undefined;
-  const trimmed = value.trim();
-  if (trimmed.length === 0) return undefined;
-  if (/^\d+$/.test(trimmed)) {
-    const n = Number(trimmed);
-    return Number.isFinite(n) ? n : undefined;
-  }
-  const parsed = Date.parse(trimmed);
-  return Number.isNaN(parsed) ? undefined : parsed;
+	if (typeof value === "number" && Number.isFinite(value)) return value;
+	if (typeof value !== "string") return undefined;
+	const trimmed = value.trim();
+	if (trimmed.length === 0) return undefined;
+	if (/^\d+$/.test(trimmed)) {
+		const n = Number(trimmed);
+		return Number.isFinite(n) ? n : undefined;
+	}
+	const parsed = Date.parse(trimmed);
+	return Number.isNaN(parsed) ? undefined : parsed;
 }
 
 function parseSessionListStdout(stdout: string): OpenCodeSessionListEntry[] {
-  const parsed = safeJsonParse<unknown>(stdout);
-  if (!Array.isArray(parsed)) return [];
+	const parsed = safeJsonParse<unknown>(stdout);
+	if (!Array.isArray(parsed)) return [];
 
-  return parsed.flatMap((entry) => {
-    if (!entry || typeof entry !== "object") return [];
-    const record = entry as Record<string, unknown>;
-    const id = asValidOpenCodeSessionId(record["id"]);
-    if (!id) return [];
-    const title = typeof record["title"] === "string" ? record["title"] : "";
-    const rawUpdated = record["updated"];
-    const updated =
-      typeof rawUpdated === "string" || typeof rawUpdated === "number"
-        ? rawUpdated
-        : undefined;
-    const updatedAt = parseUpdatedToEpochMs(rawUpdated);
-    return [
-      {
-        id,
-        title,
-        ...(updated !== undefined ? { updated } : {}),
-        ...(updatedAt !== undefined ? { updatedAt } : {}),
-      },
-    ];
-  });
+	return parsed.flatMap((entry) => {
+		if (!entry || typeof entry !== "object") return [];
+		const record = entry as Record<string, unknown>;
+		const id = asValidOpenCodeSessionId(record["id"]);
+		if (!id) return [];
+		const title = typeof record["title"] === "string" ? record["title"] : "";
+		const rawUpdated = record["updated"];
+		const updated = typeof rawUpdated === "string" || typeof rawUpdated === "number" ? rawUpdated : undefined;
+		const updatedAt = parseUpdatedToEpochMs(rawUpdated);
+		return [
+			{
+				id,
+				title,
+				...(updated !== undefined ? { updated } : {}),
+				...(updatedAt !== undefined ? { updatedAt } : {}),
+			},
+		];
+	});
 }
 
 /**
@@ -167,54 +162,51 @@ function parseSessionListStdout(stdout: string): OpenCodeSessionListEntry[] {
  * just landed. Concurrent callers still collapse onto the in-flight promise.
  */
 export async function getCachedOpenCodeSessionList(options?: {
-  timeoutMs?: number;
-  forceRefresh?: boolean;
+	timeoutMs?: number;
+	forceRefresh?: boolean;
 }): Promise<OpenCodeSessionListEntry[]> {
-  const timeoutMs = options?.timeoutMs ?? OPENCODE_SESSION_LIST_DEFAULT_TIMEOUT_MS;
-  const forceRefresh = options?.forceRefresh ?? false;
-  const now = Date.now();
+	const timeoutMs = options?.timeoutMs ?? OPENCODE_SESSION_LIST_DEFAULT_TIMEOUT_MS;
+	const forceRefresh = options?.forceRefresh ?? false;
+	const now = Date.now();
 
-  if (sessionListCache) {
-    if (sessionListCache.promise) {
-      // A fetch is already in flight — every caller waits on it, even if
-      // they wanted a refresh.
-      return sessionListCache.promise;
-    }
-    if (
-      !forceRefresh &&
-      now - sessionListCache.timestamp < OPENCODE_SESSION_LIST_CACHE_TTL_MS
-    ) {
-      return sessionListCache.entries;
-    }
-  }
+	if (sessionListCache) {
+		if (sessionListCache.promise) {
+			// A fetch is already in flight — every caller waits on it, even if
+			// they wanted a refresh.
+			return sessionListCache.promise;
+		}
+		if (!forceRefresh && now - sessionListCache.timestamp < OPENCODE_SESSION_LIST_CACHE_TTL_MS) {
+			return sessionListCache.entries;
+		}
+	}
 
-  const promise: Promise<OpenCodeSessionListEntry[]> = execFileAsync(
-    "opencode",
-    ["session", "list", "--format", "json"],
-    {
-      timeout: timeoutMs,
-      env: getOpenCodeChildEnv(),
-      // On Windows, execFile cannot resolve .cmd shim extensions without
-      // invoking the shell; windowsHide:true suppresses the conhost popup.
-      ...(process.platform === "win32" ? { shell: true, windowsHide: true } : {}),
-    },
-  )
-    .then(({ stdout }) => {
-      const entries = parseSessionListStdout(stdout);
-      if (sessionListCache?.promise === promise) {
-        sessionListCache = { entries, timestamp: Date.now() };
-      }
-      return entries;
-    })
-    .catch(() => {
-      if (sessionListCache?.promise === promise) {
-        sessionListCache = null;
-      }
-      return [] as OpenCodeSessionListEntry[];
-    });
+	const promise: Promise<OpenCodeSessionListEntry[]> = execFileAsync(
+		"opencode",
+		["session", "list", "--format", "json"],
+		{
+			timeout: timeoutMs,
+			env: getOpenCodeChildEnv(),
+			// On Windows, execFile cannot resolve .cmd shim extensions without
+			// invoking the shell; windowsHide:true suppresses the conhost popup.
+			...(process.platform === "win32" ? { shell: true, windowsHide: true } : {}),
+		},
+	)
+		.then(({ stdout }) => {
+			const entries = parseSessionListStdout(stdout);
+			if (sessionListCache?.promise === promise) {
+				sessionListCache = { entries, timestamp: Date.now() };
+			}
+			return entries;
+		})
+		.catch(() => {
+			if (sessionListCache?.promise === promise) {
+				sessionListCache = null;
+			}
+			return [] as OpenCodeSessionListEntry[];
+		});
 
-  sessionListCache = { entries: [], timestamp: now, promise };
-  return promise;
+	sessionListCache = { entries: [], timestamp: now, promise };
+	return promise;
 }
 
 /**
@@ -223,19 +215,19 @@ export async function getCachedOpenCodeSessionList(options?: {
  * does not observe a stale entry.
  */
 export function invalidateOpenCodeSessionListCache(): void {
-  // If a fetch is currently in flight we leave it alone — its result is
-  // about to land and a fresh fetch on top of it would be wasted work.
-  // Subsequent callers will see a stale snapshot for at most one tick;
-  // this is acceptable because the in-flight result already reflects state
-  // captured after the mutation began.
-  if (sessionListCache?.promise) {
-    sessionListCache = { ...sessionListCache, timestamp: 0 };
-    return;
-  }
-  sessionListCache = null;
+	// If a fetch is currently in flight we leave it alone — its result is
+	// about to land and a fresh fetch on top of it would be wasted work.
+	// Subsequent callers will see a stale snapshot for at most one tick;
+	// this is acceptable because the in-flight result already reflects state
+	// captured after the mutation began.
+	if (sessionListCache?.promise) {
+		sessionListCache = { ...sessionListCache, timestamp: 0 };
+		return;
+	}
+	sessionListCache = null;
 }
 
 /** Test-only: clear the cache including any in-flight promise. */
 export function resetOpenCodeSessionListCache(): void {
-  sessionListCache = null;
+	sessionListCache = null;
 }

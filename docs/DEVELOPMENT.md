@@ -20,16 +20,16 @@ packages/
 
 Every abstraction is a swappable plugin. All interfaces are defined in [`packages/core/src/types.ts`](../packages/core/src/types.ts).
 
-| Slot      | Interface   | Default       | Alternatives                             |
-| --------- | ----------- | ------------- | ---------------------------------------- |
-| Runtime   | `Runtime`   | `tmux` (Unix) / `process` (Windows; ConPTY via node-pty) | `process`, `docker`, `k8s`, `ssh`, `e2b` |
-| Agent     | `Agent`     | `claude-code` | `codex`, `aider`, `cursor`, `kimicode`, `opencode` |
-| Workspace | `Workspace` | `worktree`    | `clone`                                  |
-| Tracker   | `Tracker`   | `github`      | `linear`                                 |
-| SCM       | `SCM`       | `github`      | —                                        |
-| Notifier  | `Notifier`  | `desktop`     | `slack`, `webhook`, `composio`           |
-| Terminal  | `Terminal`  | `iterm2`      | `web`                                    |
-| Lifecycle | —           | (core)        | Non-pluggable                            |
+| Slot      | Interface   | Default                                                  | Alternatives                                       |
+| --------- | ----------- | -------------------------------------------------------- | -------------------------------------------------- |
+| Runtime   | `Runtime`   | `tmux` (Unix) / `process` (Windows; ConPTY via node-pty) | `process`, `docker`, `k8s`, `ssh`, `e2b`           |
+| Agent     | `Agent`     | `claude-code`                                            | `codex`, `aider`, `cursor`, `kimicode`, `opencode` |
+| Workspace | `Workspace` | `worktree`                                               | `clone`                                            |
+| Tracker   | `Tracker`   | `github`                                                 | `linear`                                           |
+| SCM       | `SCM`       | `github`                                                 | —                                                  |
+| Notifier  | `Notifier`  | `desktop`                                                | `slack`, `webhook`, `composio`                     |
+| Terminal  | `Terminal`  | `iterm2`                                                 | `web`                                              |
+| Lifecycle | —           | (core)                                                   | Non-pluggable                                      |
 
 ### Hash-Based Namespacing
 
@@ -61,16 +61,16 @@ Activity states (orthogonal to lifecycle): `active`, `ready`, `idle`, `waiting_i
 
 ### Key Services
 
-| File                                     | Purpose                                         |
-| ---------------------------------------- | ----------------------------------------------- |
-| `packages/core/src/session-manager.ts`   | Session CRUD: spawn, list, kill, send, restore  |
-| `packages/core/src/lifecycle-manager.ts` | State machine, polling loop, reactions engine   |
-| `packages/core/src/prompt-builder.ts`    | Layered worker prompt assembly (system + task)  |
-| `packages/core/src/config.ts`            | Config loading and Zod validation               |
-| `packages/core/src/plugin-registry.ts`   | Plugin discovery, loading, resolution           |
-| `packages/core/src/agent-selection.ts`   | Resolves worker vs orchestrator agent roles     |
-| `packages/core/src/observability.ts`     | Correlation IDs, structured logging, metrics    |
-| `packages/core/src/paths.ts`             | Hash-based path and session name generation     |
+| File                                     | Purpose                                        |
+| ---------------------------------------- | ---------------------------------------------- |
+| `packages/core/src/session-manager.ts`   | Session CRUD: spawn, list, kill, send, restore |
+| `packages/core/src/lifecycle-manager.ts` | State machine, polling loop, reactions engine  |
+| `packages/core/src/prompt-builder.ts`    | Layered worker prompt assembly (system + task) |
+| `packages/core/src/config.ts`            | Config loading and Zod validation              |
+| `packages/core/src/plugin-registry.ts`   | Plugin discovery, loading, resolution          |
+| `packages/core/src/agent-selection.ts`   | Resolves worker vs orchestrator agent roles    |
+| `packages/core/src/observability.ts`     | Correlation IDs, structured logging, metrics   |
+| `packages/core/src/paths.ts`             | Hash-based path and session name generation    |
 
 ### Working Principles
 
@@ -191,8 +191,8 @@ import { readFile } from "node:fs/promises";
 
 // No `any` — use `unknown` + type guards
 function processInput(value: unknown): string {
-  if (typeof value !== "string") throw new Error("Expected string");
-  return value.trim();
+	if (typeof value !== "string") throw new Error("Expected string");
+	return value.trim();
 }
 
 // Type-only imports for type-only usage
@@ -216,7 +216,7 @@ await execFileAsync("git", ["checkout", "-b", branchName]);
 
 // Always add timeouts
 await execFileAsync("gh", ["pr", "create", "--title", title], {
-  timeout: 30_000,
+	timeout: 30_000,
 });
 
 // Never use JSON.stringify for shell escaping — use the array form
@@ -237,28 +237,28 @@ A plugin exports a `manifest`, a `create()` factory, and a default `PluginModule
 import type { PluginModule, Runtime } from "@aoagents/ao-core";
 
 export const manifest = {
-  name: "myplugin",
-  slot: "runtime" as const,
-  description: "My custom runtime",
-  version: "0.1.0",
+	name: "myplugin",
+	slot: "runtime" as const,
+	description: "My custom runtime",
+	version: "0.1.0",
 };
 
 export function create(): Runtime {
-  return {
-    name: "myplugin",
-    async create(config) {
-      /* start session */
-    },
-    async destroy(sessionName) {
-      /* tear down */
-    },
-    async send(sessionName, text) {
-      /* send input */
-    },
-    async isRunning(sessionName) {
-      return false;
-    },
-  };
+	return {
+		name: "myplugin",
+		async create(config) {
+			/* start session */
+		},
+		async destroy(sessionName) {
+			/* tear down */
+		},
+		async send(sessionName, text) {
+			/* send input */
+		},
+		async isRunning(sessionName) {
+			return false;
+		},
+	};
 }
 
 export default { manifest, create } satisfies PluginModule<Runtime>;
@@ -268,19 +268,19 @@ export default { manifest, create } satisfies PluginModule<Runtime>;
 
 ```json
 {
-  "name": "@aoagents/ao-runtime-myplugin",
-  "version": "0.1.0",
-  "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "tsc",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest"
-  },
-  "dependencies": {
-    "@aoagents/ao-core": "workspace:*"
-  }
+	"name": "@aoagents/ao-runtime-myplugin",
+	"version": "0.1.0",
+	"type": "module",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"build": "tsc",
+		"typecheck": "tsc --noEmit",
+		"test": "vitest"
+	},
+	"dependencies": {
+		"@aoagents/ao-core": "workspace:*"
+	}
 }
 ```
 

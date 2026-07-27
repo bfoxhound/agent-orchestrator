@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   onboarding-test:
@@ -17,8 +17,8 @@ services:
     # Use 9000/9001/9003 on host to avoid conflicts with orchestrator
     # Container still uses 9000/14800/14801 internally
     ports:
-      - "9000:9000"   # Dashboard (host:container)
-      - "9001:14800"  # Terminal WebSocket (host:container)
-      - "9003:14801"  # DirectTerminal WebSocket (host:container)
+      - "9000:9000" # Dashboard (host:container)
+      - "9001:14800" # Terminal WebSocket (host:container)
+      - "9003:14801" # DirectTerminal WebSocket (host:container)
     # Increase shared memory for browser-based tests (future)
     shm_size: 2gb

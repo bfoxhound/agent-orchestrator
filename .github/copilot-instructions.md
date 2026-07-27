@@ -64,39 +64,46 @@ Full conventions: `CLAUDE.md`. Plugin development: `docs/DEVELOPMENT.md`. Design
 These are the areas where Copilot review adds the most value: issues CI cannot catch.
 
 **1. Design over implementation.** A perfectly coded bad design is worse than a messy good one. Question:
+
 - Side-channel communication, such as hidden flags or dynamic attribute setting
 - Boolean parameters that switch between fundamentally different behaviors and should be separate code paths
 - New internal contracts between components without interface documentation
 - Missing migration paths for behavioral changes
 
 **2. Pattern consistency.** If a file uses one pattern and the PR introduces a different one, flag it. Common violations:
+
 - Using class attributes in one place and instance properties in another for the same concept
 - Mixing callback styles when the file uses one style consistently
 - Introducing a new error-handling pattern when the file uses `throw new Error("msg", { cause: err })`
 
 **3. State machine safety.** Changes to `SessionStatus`, `ActivityState`, or lifecycle transitions require extra scrutiny:
+
 - Verify that no invalid state transitions are introduced
 - Check that `isTerminalSession()` and `TERMINAL_STATUSES` are updated if new statuses are added
 - Flag any change that could cause a session to be incorrectly marked `killed` or `exited`
 
 **4. Plugin interface stability.** Any change to interfaces in `types.ts` is potentially breaking:
+
 - New required methods on plugin interfaces break all existing plugins
 - Changed method signatures break all existing plugins
 - New optional methods are acceptable
 - Flag any non-optional interface change as "breaking — requires updating all N plugins implementing this slot"
 
 **5. Backward compatibility.** Flag changes to:
+
 - CLI flags or arguments in `packages/cli/`
 - Config schema, including `agent-orchestrator.yaml` structure and Zod validation in `packages/core/src/config.ts`
 - Exported types from `packages/core/src/index.ts`, which are a stable public API and should not break
 - Default config values or behavior
 
 **6. Plugin isolation.** Plugins must never import each other directly. They communicate through:
+
 - The `Session` object
 - The `LifecycleManager` event system
 - Core utilities exported from `@aoagents/ao-core`
 
 **7. Resource cleanup.** Check that:
+
 - File handles, subprocesses, and runtime sessions (tmux on Unix, ConPTY pty-host processes on Windows) are cleaned up on all exit paths: success, error, and early return
 - `destroy()` methods exist and use best-effort semantics
 - There are no resource leaks in error paths
@@ -118,18 +125,18 @@ These are handled by automated tooling and should not be raised in review:
 
 These files have a wide blast radius and deserve extra scrutiny:
 
-| File | Why it's risky |
-|------|----------------|
-| `packages/core/src/types.ts` | All 8 plugin interfaces live here. Changes can break every plugin. |
-| `packages/core/src/lifecycle-manager.ts` | State machine and polling loop with subtle state dependencies. |
-| `packages/core/src/session-manager.ts` | Session CRUD + stale runtime reconciliation. `list()` persists `runtime_lost` to disk when enrichment detects dead runtimes. Invariant violations can cause phantom `killed` or `exited` sessions. |
-| `packages/core/src/lifecycle-state.ts` | Canonical lifecycle → legacy status mapping. New terminal reasons (e.g. `runtime_lost`) must be added to `deriveLegacyStatus()`. |
-| `packages/cli/src/commands/start.ts` | ao start/stop + Ctrl+C shutdown. Cross-project scoping logic is subtle — `ao stop <project>` must not kill parent process. On Windows, also calls `sweepWindowsPtyHosts()` to gracefully tear down detached ConPTY pty-host processes that `taskkill /T` cannot reach. |
-| `packages/core/src/config.ts` | Zod validation schema. Changes affect every `ao` command. |
-| `packages/core/src/index.ts` | Stable public API. Do not break it without deprecation. |
-| `packages/web/src/app/globals.css` | Design tokens used by 50+ components. Renaming tokens breaks the UI. |
-| `packages/cli/src/index.ts` | CLI entry point. Flag and argument changes are user-facing. |
-| `agent-orchestrator.yaml.example` | Config reference. It must stay in sync with the Zod schema. |
+| File                                     | Why it's risky                                                                                                                                                                                                                                                         |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/core/src/types.ts`             | All 8 plugin interfaces live here. Changes can break every plugin.                                                                                                                                                                                                     |
+| `packages/core/src/lifecycle-manager.ts` | State machine and polling loop with subtle state dependencies.                                                                                                                                                                                                         |
+| `packages/core/src/session-manager.ts`   | Session CRUD + stale runtime reconciliation. `list()` persists `runtime_lost` to disk when enrichment detects dead runtimes. Invariant violations can cause phantom `killed` or `exited` sessions.                                                                     |
+| `packages/core/src/lifecycle-state.ts`   | Canonical lifecycle → legacy status mapping. New terminal reasons (e.g. `runtime_lost`) must be added to `deriveLegacyStatus()`.                                                                                                                                       |
+| `packages/cli/src/commands/start.ts`     | ao start/stop + Ctrl+C shutdown. Cross-project scoping logic is subtle — `ao stop <project>` must not kill parent process. On Windows, also calls `sweepWindowsPtyHosts()` to gracefully tear down detached ConPTY pty-host processes that `taskkill /T` cannot reach. |
+| `packages/core/src/config.ts`            | Zod validation schema. Changes affect every `ao` command.                                                                                                                                                                                                              |
+| `packages/core/src/index.ts`             | Stable public API. Do not break it without deprecation.                                                                                                                                                                                                                |
+| `packages/web/src/app/globals.css`       | Design tokens used by 50+ components. Renaming tokens breaks the UI.                                                                                                                                                                                                   |
+| `packages/cli/src/index.ts`              | CLI entry point. Flag and argument changes are user-facing.                                                                                                                                                                                                            |
+| `agent-orchestrator.yaml.example`        | Config reference. It must stay in sync with the Zod schema.                                                                                                                                                                                                            |
 
 ### Behavioral Rules for Reviews
 
@@ -182,19 +189,19 @@ Performance
 import type { PluginModule, Runtime } from "@aoagents/ao-core";
 
 export const manifest = {
-  name: "tmux",
-  slot: "runtime" as const,
-  description: "tmux session runtime",
-  version: "0.1.0",
+	name: "tmux",
+	slot: "runtime" as const,
+	description: "tmux session runtime",
+	version: "0.1.0",
 };
 
 export function create(config?: Record<string, unknown>): Runtime {
-  // Validate config here and store it via closure.
-  return { /* ... */ };
+	// Validate config here and store it via closure.
+	return {/* ... */};
 }
 
 export function detect(): boolean {
-  /* ... */
+	/* ... */
 }
 
 export default { manifest, create, detect } satisfies PluginModule<Runtime>;

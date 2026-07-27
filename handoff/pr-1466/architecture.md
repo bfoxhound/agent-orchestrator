@@ -17,7 +17,7 @@ What this PR changes, in the order you should learn it. Companion to [`main.md`]
 ```
 
 - `storageKey` = `{hash}-{projectId}` was the primary key threaded through every session.
-- Archive was a *second place* to look for terminated sessions — restore/status had dual lookup paths.
+- Archive was a _second place_ to look for terminated sessions — restore/status had dual lookup paths.
 
 ### V2 (after — `storage-redesign`)
 
@@ -33,8 +33,9 @@ What this PR changes, in the order you should learn it. Companion to [`main.md`]
 ```
 
 **Key shifts:**
+
 - One canonical directory per project — no more `{hash}-{projectId}` wrapper.
-- `projectId` is now a *deterministic, human-readable, collision-safe* identifier: `{basename}_{8-char-hash}`. Duplicate basenames get suffixed automatically.
+- `projectId` is now a _deterministic, human-readable, collision-safe_ identifier: `{basename}_{8-char-hash}`. Duplicate basenames get suffixed automatically.
 - Session metadata is JSON files (`.json` extension), not flat key-value blobs.
 - `archive/` is gone. Terminated sessions stay in `sessions/` with a terminated lifecycle state.
 - `storageKey` is fully removed from the type system. Any reference is dead code.
@@ -42,6 +43,7 @@ What this PR changes, in the order you should learn it. Companion to [`main.md`]
 ### Path helpers (where to read/write)
 
 `packages/core/src/paths.ts`:
+
 - `getProjectSessionsDir(projectId)` — replaces `getActiveMetadataDir(storageKey)`.
 - `getProjectWorktreesDir(projectId)` — replaces worktree path under `{hash}-{projectId}`.
 - Archive helpers (`getArchiveDir`, etc.) are **removed**. If you see one, it's dead.
@@ -55,12 +57,14 @@ What this PR changes, in the order you should learn it. Companion to [`main.md`]
 Example: a config at `/Users/harshit/work/agent-orchestrator/agent-orchestrator.yaml` → `projectId = "agent-orchestrator_a1b2c3d4"`.
 
 Properties:
+
 - **Deterministic** — same path always yields the same id.
 - **Collision-safe** — different paths with the same basename get distinct hashes.
 - **Suffix allocation on duplicates** — if you have two checkouts with the same basename in the global config, the loader allocates `name_2`, `name_3`, etc. (see commit `f7118ef1`).
 - **Sanitization** — basenames are stripped of dots and unsafe chars before hashing (commit `27666c6e`).
 
 Where it's used:
+
 - Storage paths (above)
 - `agent-orchestrator.yaml` → global config registration
 - Web tmux session resolution (commit `eca3001c` handles legacy wrapped keys for backward compat)
@@ -79,12 +83,14 @@ Sessions persisted **both** a `SessionStatus` enum (`spawning | working | pr_ope
 ### After
 
 Source of truth is **`lifecycle-state.ts`**:
+
 - `state`: `not_started | working | idle | needs_input | stuck | detecting | done | terminated`
 - `reason`: `manually_killed | runtime_lost | agent_process_exited | probe_failure | error_in_process | auto_cleanup | pr_merged`
 
 Legacy `SessionStatus` is **derived** at read time via `deriveLegacyStatus(state, reason, prState)` — used only for display backward-compat. Never persisted.
 
 Practical consequences:
+
 - `previousStatus` arguments throughout the codebase are gone (commit `e9d9c762`).
 - Restore now resets lifecycle cleanly, including for previously-merged PRs (commits `d22f0c6f`, `b178eb66`, `fc6fd88b`).
 - Stale runtime detection: `sm.list()` checks if the tmux/process backing each session is still alive during enrichment. Dead ones get persisted as `runtime_lost` → legacy status `killed`. Without this, sessions whose runtime died silently would show "active" forever (commit `9e2df894`).
@@ -139,10 +145,10 @@ ao migrate-storage                 # execute (atomic per-project, with rollback 
 
 **Note:** There is no `stop.ts` — the stop command is defined inside `packages/cli/src/commands/start.ts`.
 
-| Invocation | Before | After |
-|------------|--------|-------|
-| `ao stop` | Kills only the most-recently-active orchestrator. Saw only local config (1 project). | Loads global config, kills **all** sessions across **all** registered projects. Stops parent process + dashboard. Writes `last-stop.json` with `{ projectId, sessionIds[], otherProjects: [...] }` for restore. |
-| `ao stop <project>` | Same as above (no scoping). | Surgical: kills only `<project>`'s sessions. **Does not** kill parent process or dashboard (commit `95cf979d` — this was a real bug). Falls back to global config if `<project>` isn't in the local config (`2db2951a`). Calls `removeProjectFromRunning(projectId)` to remove the project from `running.json` so that a subsequent `ao start <project>` can restart without hitting the "already running" gate. |
+| Invocation          | Before                                                                               | After                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ao stop`           | Kills only the most-recently-active orchestrator. Saw only local config (1 project). | Loads global config, kills **all** sessions across **all** registered projects. Stops parent process + dashboard. Writes `last-stop.json` with `{ projectId, sessionIds[], otherProjects: [...] }` for restore.                                                                                                                                                                                                  |
+| `ao stop <project>` | Same as above (no scoping).                                                          | Surgical: kills only `<project>`'s sessions. **Does not** kill parent process or dashboard (commit `95cf979d` — this was a real bug). Falls back to global config if `<project>` isn't in the local config (`2db2951a`). Calls `removeProjectFromRunning(projectId)` to remove the project from `running.json` so that a subsequent `ao start <project>` can restart without hitting the "already running" gate. |
 
 ### `ao start`
 
@@ -166,6 +172,7 @@ Mirrors `ao stop` exactly: kills all sessions, writes `last-stop.json`, unregist
 ## 6. Web dashboard changes
 
 Minimal but important:
+
 - **Sidebar:** always shows all sessions across all projects, regardless of which project is active. Per-project filtering is applied at the kanban level via `projectSessions = sessions.filter(s => s.projectId === projectId)`. (`53e8476f`)
 - **Tmux session resolver:** handles the legacy wrapped storage key (`{hash}-{projectName}`) so dashboards open mid-migration don't break (`eca3001c`).
 - No new UI component libraries, no inline styles — design system unchanged.
@@ -190,11 +197,11 @@ The cleanup spans 11 commits (group C in `pr-1466.html` → Commit Story tab). T
 
 ## 8. New runtime artifacts
 
-| File | Lifetime | Written by | Read by |
-|------|----------|------------|---------|
-| `~/.agent-orchestrator/config.yaml` | Persistent | `ao start` (auto-register), `ao spawn`, manual edits | All CLI commands needing cross-project visibility, tab completions |
-| `~/.agent-orchestrator/running.json` | Lives while `ao start` is running | `ao start` (register), `ao stop`/Ctrl+C (unregister), `ao stop <project>` (removes project via `removeProjectFromRunning`) | `ao status`, `ao spawn`, dashboard, `ao start` (checks for already-running + `projectNeedsRestart` gate) |
-| `~/.agent-orchestrator/last-stop.json` | Cleared after restore prompt | `ao stop`, Ctrl+C | `ao start` |
+| File                                   | Lifetime                          | Written by                                                                                                                 | Read by                                                                                                  |
+| -------------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `~/.agent-orchestrator/config.yaml`    | Persistent                        | `ao start` (auto-register), `ao spawn`, manual edits                                                                       | All CLI commands needing cross-project visibility, tab completions                                       |
+| `~/.agent-orchestrator/running.json`   | Lives while `ao start` is running | `ao start` (register), `ao stop`/Ctrl+C (unregister), `ao stop <project>` (removes project via `removeProjectFromRunning`) | `ao status`, `ao spawn`, dashboard, `ao start` (checks for already-running + `projectNeedsRestart` gate) |
+| `~/.agent-orchestrator/last-stop.json` | Cleared after restore prompt      | `ao stop`, Ctrl+C                                                                                                          | `ao start`                                                                                               |
 
 ---
 

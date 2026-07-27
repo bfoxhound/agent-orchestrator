@@ -39,9 +39,9 @@ const canRun = hasCredentials && Boolean(LINEAR_TEAM_ID);
 // ---------------------------------------------------------------------------
 
 interface LinearGraphQLOptions {
-  maxAttempts?: number;
-  retryDelayMs?: number;
-  timeoutMs?: number;
+	maxAttempts?: number;
+	retryDelayMs?: number;
+	timeoutMs?: number;
 }
 
 /**
@@ -49,84 +49,82 @@ interface LinearGraphQLOptions {
  * Only available when LINEAR_API_KEY is set.
  */
 function linearGraphQL<T>(
-  query: string,
-  variables: Record<string, unknown>,
-  options: LinearGraphQLOptions = {},
+	query: string,
+	variables: Record<string, unknown>,
+	options: LinearGraphQLOptions = {},
 ): Promise<T> {
-  if (!LINEAR_API_KEY) {
-    throw new Error("linearGraphQL requires LINEAR_API_KEY");
-  }
-  const body = JSON.stringify({ query, variables });
-  const maxAttempts = options.maxAttempts ?? 3;
-  const retryDelayMs = options.retryDelayMs ?? 1_000;
-  const timeoutMs = options.timeoutMs ?? 30_000;
+	if (!LINEAR_API_KEY) {
+		throw new Error("linearGraphQL requires LINEAR_API_KEY");
+	}
+	const body = JSON.stringify({ query, variables });
+	const maxAttempts = options.maxAttempts ?? 3;
+	const retryDelayMs = options.retryDelayMs ?? 1_000;
+	const timeoutMs = options.timeoutMs ?? 30_000;
 
-  async function executeWithRetry(attempt = 1): Promise<T> {
-    try {
-      return await new Promise<T>((resolve, reject) => {
-        const url = new URL("https://api.linear.app/graphql");
-        const req = request(
-          {
-            hostname: url.hostname,
-            path: url.pathname,
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: LINEAR_API_KEY,
-              "Content-Length": Buffer.byteLength(body),
-            },
-          },
-          (res) => {
-            const chunks: Buffer[] = [];
-            res.on("data", (chunk: Buffer) => chunks.push(chunk));
-            res.on("end", () => {
-              const text = Buffer.concat(chunks).toString("utf-8");
-              const statusCode = res.statusCode ?? 0;
+	async function executeWithRetry(attempt = 1): Promise<T> {
+		try {
+			return await new Promise<T>((resolve, reject) => {
+				const url = new URL("https://api.linear.app/graphql");
+				const req = request(
+					{
+						hostname: url.hostname,
+						path: url.pathname,
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							Authorization: LINEAR_API_KEY,
+							"Content-Length": Buffer.byteLength(body),
+						},
+					},
+					(res) => {
+						const chunks: Buffer[] = [];
+						res.on("data", (chunk: Buffer) => chunks.push(chunk));
+						res.on("end", () => {
+							const text = Buffer.concat(chunks).toString("utf-8");
+							const statusCode = res.statusCode ?? 0;
 
-              if (statusCode >= 500) {
-                reject(new Error(`Linear API ${statusCode}: ${text.slice(0, 200)}`));
-                return;
-              }
+							if (statusCode >= 500) {
+								reject(new Error(`Linear API ${statusCode}: ${text.slice(0, 200)}`));
+								return;
+							}
 
-              let json: { data?: T; errors?: Array<{ message: string }> };
-              try {
-                json = JSON.parse(text) as { data?: T; errors?: Array<{ message: string }> };
-              } catch {
-                reject(
-                  new Error(`Linear API returned non-JSON (${statusCode}): ${text.slice(0, 200)}`),
-                );
-                return;
-              }
+							let json: { data?: T; errors?: Array<{ message: string }> };
+							try {
+								json = JSON.parse(text) as { data?: T; errors?: Array<{ message: string }> };
+							} catch {
+								reject(new Error(`Linear API returned non-JSON (${statusCode}): ${text.slice(0, 200)}`));
+								return;
+							}
 
-              if (json.errors?.length) {
-                reject(new Error(`Linear API error: ${json.errors[0].message}`));
-                return;
-              }
+							if (json.errors?.length) {
+								reject(new Error(`Linear API error: ${json.errors[0].message}`));
+								return;
+							}
 
-              resolve(json.data as T);
-            });
-          },
-        );
+							resolve(json.data as T);
+						});
+					},
+				);
 
-        req.setTimeout(timeoutMs, () => {
-          req.destroy();
-          reject(new Error(`Linear API request timed out after ${timeoutMs}ms`));
-        });
+				req.setTimeout(timeoutMs, () => {
+					req.destroy();
+					reject(new Error(`Linear API request timed out after ${timeoutMs}ms`));
+				});
 
-        req.on("error", (err) => reject(err));
-        req.write(body);
-        req.end();
-      });
-    } catch (err) {
-      if (attempt < maxAttempts) {
-        await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
-        return executeWithRetry(attempt + 1);
-      }
-      throw err;
-    }
-  }
+				req.on("error", (err) => reject(err));
+				req.write(body);
+				req.end();
+			});
+		} catch (err) {
+			if (attempt < maxAttempts) {
+				await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+				return executeWithRetry(attempt + 1);
+			}
+			throw err;
+		}
+	}
 
-  return executeWithRetry();
+	return executeWithRetry();
 }
 
 // ---------------------------------------------------------------------------
@@ -134,223 +132,220 @@ function linearGraphQL<T>(
 // ---------------------------------------------------------------------------
 
 describe.skipIf(!canRun)("tracker-linear (integration)", () => {
-  const tracker = trackerLinear.create();
+	const tracker = trackerLinear.create();
 
-  const project: ProjectConfig = {
-    name: "test-project",
-    repo: "test-org/test-repo",
-    path: "/tmp/test",
-    defaultBranch: "main",
-    sessionPrefix: "test",
-    tracker: {
-      plugin: "linear",
-      teamId: LINEAR_TEAM_ID!,
-    },
-  };
+	const project: ProjectConfig = {
+		name: "test-project",
+		repo: "test-org/test-repo",
+		path: "/tmp/test",
+		defaultBranch: "main",
+		sessionPrefix: "test",
+		tracker: {
+			plugin: "linear",
+			teamId: LINEAR_TEAM_ID!,
+		},
+	};
 
-  // Issue state tracked across tests (created in beforeAll, cleaned up in afterAll)
-  let issueIdentifier: string; // e.g. "INT-1234"
-  let issueUuid: string | undefined; // Linear internal UUID (needed for trash via direct API)
+	// Issue state tracked across tests (created in beforeAll, cleaned up in afterAll)
+	let issueIdentifier: string; // e.g. "INT-1234"
+	let issueUuid: string | undefined; // Linear internal UUID (needed for trash via direct API)
 
-  // -------------------------------------------------------------------------
-  // Setup — create a test issue
-  // -------------------------------------------------------------------------
+	// -------------------------------------------------------------------------
+	// Setup — create a test issue
+	// -------------------------------------------------------------------------
 
-  beforeAll(async () => {
-    const result = await tracker.createIssue!(
-      {
-        title: `[AO Integration Test] ${new Date().toISOString()}`,
-        description: "Automated integration test issue. Safe to delete if found lingering.",
-        priority: 4, // Low
-      },
-      project,
-    );
+	beforeAll(async () => {
+		const result = await tracker.createIssue!(
+			{
+				title: `[AO Integration Test] ${new Date().toISOString()}`,
+				description: "Automated integration test issue. Safe to delete if found lingering.",
+				priority: 4, // Low
+			},
+			project,
+		);
 
-    issueIdentifier = result.id;
+		issueIdentifier = result.id;
 
-    // Resolve the UUID for cleanup — only possible with direct API key
-    if (LINEAR_API_KEY) {
-      try {
-        const data = await linearGraphQL<{ issue: { id: string } }>(
-          `query($id: String!) { issue(id: $id) { id } }`,
-          { id: issueIdentifier },
-        );
-        issueUuid = data.issue.id;
-      } catch {
-        issueUuid = undefined;
-      }
-    }
-  }, 30_000);
+		// Resolve the UUID for cleanup — only possible with direct API key
+		if (LINEAR_API_KEY) {
+			try {
+				const data = await linearGraphQL<{ issue: { id: string } }>(`query($id: String!) { issue(id: $id) { id } }`, {
+					id: issueIdentifier,
+				});
+				issueUuid = data.issue.id;
+			} catch {
+				issueUuid = undefined;
+			}
+		}
+	}, 30_000);
 
-  // -------------------------------------------------------------------------
-  // Cleanup — archive the test issue so it doesn't clutter the board.
-  // With LINEAR_API_KEY we can trash it directly. With Composio-only we
-  // close it via the plugin (can't trash through the plugin interface).
-  // -------------------------------------------------------------------------
+	// -------------------------------------------------------------------------
+	// Cleanup — archive the test issue so it doesn't clutter the board.
+	// With LINEAR_API_KEY we can trash it directly. With Composio-only we
+	// close it via the plugin (can't trash through the plugin interface).
+	// -------------------------------------------------------------------------
 
-  afterAll(async () => {
-    if (!issueIdentifier) return;
+	afterAll(async () => {
+		if (!issueIdentifier) return;
 
-    try {
-      if (LINEAR_API_KEY) {
-        const cleanupRequest = { maxAttempts: 1, timeoutMs: 5_000 };
-        if (!issueUuid) {
-          const data = await linearGraphQL<{ issue: { id: string } }>(
-            `query($id: String!) { issue(id: $id) { id } }`,
-            { id: issueIdentifier },
-            cleanupRequest,
-          );
-          issueUuid = data.issue.id;
-        }
+		try {
+			if (LINEAR_API_KEY) {
+				const cleanupRequest = { maxAttempts: 1, timeoutMs: 5_000 };
+				if (!issueUuid) {
+					const data = await linearGraphQL<{ issue: { id: string } }>(
+						`query($id: String!) { issue(id: $id) { id } }`,
+						{ id: issueIdentifier },
+						cleanupRequest,
+					);
+					issueUuid = data.issue.id;
+				}
 
-        if (!issueUuid) return;
-        await linearGraphQL(
-          `mutation($id: String!) {
+				if (!issueUuid) return;
+				await linearGraphQL(
+					`mutation($id: String!) {
             issueUpdate(id: $id, input: { trashed: true }) {
               success
             }
           }`,
-          { id: issueUuid },
-          cleanupRequest,
-        );
-      } else {
-        // Composio-only: best-effort close via plugin
-        await tracker.updateIssue!(issueIdentifier, { state: "closed" }, project);
-      }
-    } catch {
-      // Best-effort cleanup
-    }
-  }, 15_000);
+					{ id: issueUuid },
+					cleanupRequest,
+				);
+			} else {
+				// Composio-only: best-effort close via plugin
+				await tracker.updateIssue!(issueIdentifier, { state: "closed" }, project);
+			}
+		} catch {
+			// Best-effort cleanup
+		}
+	}, 15_000);
 
-  // -------------------------------------------------------------------------
-  // Test cases
-  // -------------------------------------------------------------------------
+	// -------------------------------------------------------------------------
+	// Test cases
+	// -------------------------------------------------------------------------
 
-  it("createIssue returns a well-shaped Issue", () => {
-    // Validating the result captured in beforeAll
-    expect(issueIdentifier).toBeDefined();
-    expect(issueIdentifier).toMatch(/^[A-Z]+-\d+$/);
-  });
+	it("createIssue returns a well-shaped Issue", () => {
+		// Validating the result captured in beforeAll
+		expect(issueIdentifier).toBeDefined();
+		expect(issueIdentifier).toMatch(/^[A-Z]+-\d+$/);
+	});
 
-  it("getIssue fetches the created issue with correct fields", async () => {
-    const issue = await tracker.getIssue(issueIdentifier, project);
+	it("getIssue fetches the created issue with correct fields", async () => {
+		const issue = await tracker.getIssue(issueIdentifier, project);
 
-    expect(issue.id).toBe(issueIdentifier);
-    expect(issue.title).toContain("[AO Integration Test]");
-    expect(issue.description).toContain("Automated integration test");
-    expect(issue.url).toMatch(/^https:\/\/linear\.app\//);
-    expect(issue.state).toBe("open");
-    expect(Array.isArray(issue.labels)).toBe(true);
-    expect(issue.priority).toBe(4);
+		expect(issue.id).toBe(issueIdentifier);
+		expect(issue.title).toContain("[AO Integration Test]");
+		expect(issue.description).toContain("Automated integration test");
+		expect(issue.url).toMatch(/^https:\/\/linear\.app\//);
+		expect(issue.state).toBe("open");
+		expect(Array.isArray(issue.labels)).toBe(true);
+		expect(issue.priority).toBe(4);
 
-    expect(issue.branchName).toBeDefined();
-    expect(typeof issue.branchName).toBe("string");
-    expect(issue.branchName!.length).toBeGreaterThan(0);
-  });
+		expect(issue.branchName).toBeDefined();
+		expect(typeof issue.branchName).toBe("string");
+		expect(issue.branchName!.length).toBeGreaterThan(0);
+	});
 
-  it("isCompleted returns false for an open issue", async () => {
-    const completed = await tracker.isCompleted(issueIdentifier, project);
-    expect(completed).toBe(false);
-  });
+	it("isCompleted returns false for an open issue", async () => {
+		const completed = await tracker.isCompleted(issueIdentifier, project);
+		expect(completed).toBe(false);
+	});
 
-  it("issueUrl returns a valid Linear URL", () => {
-    const url = tracker.issueUrl(issueIdentifier, project);
-    expect(url).toContain(issueIdentifier);
-    expect(url).toMatch(/^https:\/\/linear\.app\//);
-  });
+	it("issueUrl returns a valid Linear URL", () => {
+		const url = tracker.issueUrl(issueIdentifier, project);
+		expect(url).toContain(issueIdentifier);
+		expect(url).toMatch(/^https:\/\/linear\.app\//);
+	});
 
-  it("branchName returns conventional branch name", () => {
-    const branch = tracker.branchName(issueIdentifier, project);
-    expect(branch).toBe(`feat/${issueIdentifier}`);
-  });
+	it("branchName returns conventional branch name", () => {
+		const branch = tracker.branchName(issueIdentifier, project);
+		expect(branch).toBe(`feat/${issueIdentifier}`);
+	});
 
-  it("generatePrompt includes issue details", async () => {
-    const prompt = await tracker.generatePrompt(issueIdentifier, project);
+	it("generatePrompt includes issue details", async () => {
+		const prompt = await tracker.generatePrompt(issueIdentifier, project);
 
-    expect(prompt).toContain(issueIdentifier);
-    expect(prompt).toContain("[AO Integration Test]");
-    expect(prompt).toContain("Priority: Low");
-    expect(prompt).toContain("implement the changes");
-  });
+		expect(prompt).toContain(issueIdentifier);
+		expect(prompt).toContain("[AO Integration Test]");
+		expect(prompt).toContain("Priority: Low");
+		expect(prompt).toContain("implement the changes");
+	});
 
-  it("listIssues includes the created issue", async () => {
-    // Linear API has eventual consistency — poll until the issue appears in list results
-    const found = await pollUntil(
-      async () => {
-        const issues = await tracker.listIssues!({ state: "open", limit: 100 }, project);
-        return issues.find((i: { id: string }) => i.id === issueIdentifier);
-      },
-      { timeoutMs: 15_000, intervalMs: 1_000 },
-    );
+	it("listIssues includes the created issue", async () => {
+		// Linear API has eventual consistency — poll until the issue appears in list results
+		const found = await pollUntil(
+			async () => {
+				const issues = await tracker.listIssues!({ state: "open", limit: 100 }, project);
+				return issues.find((i: { id: string }) => i.id === issueIdentifier);
+			},
+			{ timeoutMs: 15_000, intervalMs: 1_000 },
+		);
 
-    expect(found).toBeDefined();
-    expect(found!.title).toContain("[AO Integration Test]");
-  });
+		expect(found).toBeDefined();
+		expect(found!.title).toContain("[AO Integration Test]");
+	});
 
-  it("updateIssue adds a comment", async () => {
-    await tracker.updateIssue!(issueIdentifier, { comment: "Integration test comment" }, project);
+	it("updateIssue adds a comment", async () => {
+		await tracker.updateIssue!(issueIdentifier, { comment: "Integration test comment" }, project);
 
-    // Verify the comment was added — use direct API if available,
-    // otherwise trust the plugin didn't throw
-    if (LINEAR_API_KEY) {
-      const commentBodies = await pollUntil(
-        async () => {
-          const data = await linearGraphQL<{
-            issue: { comments: { nodes: Array<{ body: string }> } };
-          }>(
-            `query($id: String!) {
+		// Verify the comment was added — use direct API if available,
+		// otherwise trust the plugin didn't throw
+		if (LINEAR_API_KEY) {
+			const commentBodies = await pollUntil(
+				async () => {
+					const data = await linearGraphQL<{
+						issue: { comments: { nodes: Array<{ body: string }> } };
+					}>(
+						`query($id: String!) {
               issue(id: $id) {
                 comments(first: 50) { nodes { body } }
               }
             }`,
-            { id: issueIdentifier },
-          );
+						{ id: issueIdentifier },
+					);
 
-          const bodies = data.issue.comments.nodes.map((c) => c.body);
-          return bodies.includes("Integration test comment") ? bodies : undefined;
-        },
-        { timeoutMs: 5_000, intervalMs: 500 },
-      );
+					const bodies = data.issue.comments.nodes.map((c) => c.body);
+					return bodies.includes("Integration test comment") ? bodies : undefined;
+				},
+				{ timeoutMs: 5_000, intervalMs: 500 },
+			);
 
-      expect(commentBodies).toContain("Integration test comment");
-    }
-  });
+			expect(commentBodies).toContain("Integration test comment");
+		}
+	});
 
-  it("updateIssue closes the issue and isCompleted reflects it", async () => {
-    await tracker.updateIssue!(issueIdentifier, { state: "closed" }, project);
+	it("updateIssue closes the issue and isCompleted reflects it", async () => {
+		await tracker.updateIssue!(issueIdentifier, { state: "closed" }, project);
 
-    // Linear API has eventual consistency — poll until the state propagates
-    const completed = await pollUntilEqual(
-      () => tracker.isCompleted(issueIdentifier, project),
-      true,
-      { timeoutMs: 5_000, intervalMs: 500 },
-    );
-    expect(completed).toBe(true);
+		// Linear API has eventual consistency — poll until the state propagates
+		const completed = await pollUntilEqual(() => tracker.isCompleted(issueIdentifier, project), true, {
+			timeoutMs: 5_000,
+			intervalMs: 500,
+		});
+		expect(completed).toBe(true);
 
-    const closedState = await pollUntilEqual(
-      async () => (await tracker.getIssue(issueIdentifier, project)).state,
-      "closed",
-      { timeoutMs: 5_000, intervalMs: 500 },
-    );
-    expect(closedState).toBe("closed");
-  });
+		const closedState = await pollUntilEqual(
+			async () => (await tracker.getIssue(issueIdentifier, project)).state,
+			"closed",
+			{ timeoutMs: 5_000, intervalMs: 500 },
+		);
+		expect(closedState).toBe("closed");
+	});
 
-  it("updateIssue reopens the issue", async () => {
-    await tracker.updateIssue!(issueIdentifier, { state: "open" }, project);
+	it("updateIssue reopens the issue", async () => {
+		await tracker.updateIssue!(issueIdentifier, { state: "open" }, project);
 
-    // Linear API has eventual consistency — poll until the state propagates
-    const completed = await pollUntilEqual(
-      () => tracker.isCompleted(issueIdentifier, project),
-      false,
-      { timeoutMs: 5_000, intervalMs: 500 },
-    );
-    expect(completed).toBe(false);
+		// Linear API has eventual consistency — poll until the state propagates
+		const completed = await pollUntilEqual(() => tracker.isCompleted(issueIdentifier, project), false, {
+			timeoutMs: 5_000,
+			intervalMs: 500,
+		});
+		expect(completed).toBe(false);
 
-    const reopenedState = await pollUntilEqual(
-      async () => (await tracker.getIssue(issueIdentifier, project)).state,
-      "open",
-      { timeoutMs: 5_000, intervalMs: 500 },
-    );
-    expect(reopenedState).toBe("open");
-  });
+		const reopenedState = await pollUntilEqual(
+			async () => (await tracker.getIssue(issueIdentifier, project)).state,
+			"open",
+			{ timeoutMs: 5_000, intervalMs: 500 },
+		);
+		expect(reopenedState).toBe("open");
+	});
 });

@@ -31,7 +31,7 @@ export const PREFERRED_GH_PATH = `${PREFERRED_GH_BIN_DIR}/gh`;
  * which breaks test mocks that replace homedir after import.
  */
 function getAoBinDir(): string {
-  return join(homedir(), ".ao", "bin");
+	return join(homedir(), ".ao", "bin");
 }
 
 /** Current version of wrapper scripts — bump when scripts change */
@@ -46,27 +46,25 @@ const WRAPPER_VERSION = "0.7.0";
  * Deduplicates entries and ensures /usr/local/bin is early for gh resolution.
  */
 export function buildAgentPath(basePath: string | undefined): string {
-  const delimiter = isWindows() ? ";" : ":";
-  const inherited = (basePath ?? (isWindows() ? "" : DEFAULT_PATH))
-    .split(delimiter)
-    .filter(Boolean);
-  const ordered: string[] = [];
-  const seen = new Set<string>();
+	const delimiter = isWindows() ? ";" : ":";
+	const inherited = (basePath ?? (isWindows() ? "" : DEFAULT_PATH)).split(delimiter).filter(Boolean);
+	const ordered: string[] = [];
+	const seen = new Set<string>();
 
-  const add = (entry: string): void => {
-    if (!entry || seen.has(entry)) return;
-    ordered.push(entry);
-    seen.add(entry);
-  };
+	const add = (entry: string): void => {
+		if (!entry || seen.has(entry)) return;
+		ordered.push(entry);
+		seen.add(entry);
+	};
 
-  add(getAoBinDir());
-  if (!isWindows()) {
-    add(PREFERRED_GH_BIN_DIR);
-  }
+	add(getAoBinDir());
+	if (!isWindows()) {
+		add(PREFERRED_GH_BIN_DIR);
+	}
 
-  for (const entry of inherited) add(entry);
+	for (const entry of inherited) add(entry);
 
-  return ordered.join(delimiter);
+	return ordered.join(delimiter);
 }
 
 // =============================================================================
@@ -632,10 +630,10 @@ exit \$exit_code
  *                         resolve at runtime via PATH (excluding the wrapper dir).
  */
 export function buildNodeWrapper(name: "gh" | "git", realBinaryPath: string): string {
-  if (name === "gh") {
-    return buildGhNodeWrapper(realBinaryPath);
-  }
-  return buildGitNodeWrapper(realBinaryPath);
+	if (name === "gh") {
+		return buildGhNodeWrapper(realBinaryPath);
+	}
+	return buildGitNodeWrapper(realBinaryPath);
 }
 
 /**
@@ -706,7 +704,7 @@ function updateAoMetadata(key, value) {
 }`;
 
 function buildGhNodeWrapper(realBinaryPath: string): string {
-  return `#!/usr/bin/env node
+	return `#!/usr/bin/env node
 // ao gh wrapper (Windows Node.js) — auto-updates session metadata on PR operations
 "use strict";
 const { spawnSync } = require("child_process");
@@ -794,7 +792,7 @@ if (key === "pr/create" || key === "pr/merge") {
 }
 
 function buildGitNodeWrapper(realBinaryPath: string): string {
-  return `#!/usr/bin/env node
+	return `#!/usr/bin/env node
 // ao git wrapper (Windows Node.js) — auto-updates session metadata on branch operations
 "use strict";
 const { spawnSync } = require("child_process");
@@ -896,10 +894,10 @@ If automatic updates fail, you can manually update metadata:
  * then renaming. Prevents concurrent sessions from reading partially written scripts.
  */
 async function atomicWriteFile(filePath: string, content: string, mode: number): Promise<void> {
-  const suffix = randomBytes(6).toString("hex");
-  const tmpPath = `${filePath}.tmp.${suffix}`;
-  await writeFile(tmpPath, content, { encoding: "utf-8", mode });
-  await rename(tmpPath, filePath);
+	const suffix = randomBytes(6).toString("hex");
+	const tmpPath = `${filePath}.tmp.${suffix}`;
+	await writeFile(tmpPath, content, { encoding: "utf-8", mode });
+	await rename(tmpPath, filePath);
 }
 
 /**
@@ -913,54 +911,50 @@ async function atomicWriteFile(filePath: string, content: string, mode: number):
  * 2. Appends an "Agent Orchestrator" section to the workspace AGENTS.md
  */
 export async function setupPathWrapperWorkspace(workspacePath: string): Promise<void> {
-  // 1. Write shared wrappers to ~/.ao/bin/ (skip if version marker matches)
-  await mkdir(getAoBinDir(), { recursive: true });
+	// 1. Write shared wrappers to ~/.ao/bin/ (skip if version marker matches)
+	await mkdir(getAoBinDir(), { recursive: true });
 
-  const markerPath = join(getAoBinDir(), ".ao-version");
-  let needsUpdate = true;
-  try {
-    const existing = await readFile(markerPath, "utf-8");
-    if (existing.trim() === WRAPPER_VERSION) needsUpdate = false;
-  } catch {
-    // File doesn't exist — needs update
-  }
+	const markerPath = join(getAoBinDir(), ".ao-version");
+	let needsUpdate = true;
+	try {
+		const existing = await readFile(markerPath, "utf-8");
+		if (existing.trim() === WRAPPER_VERSION) needsUpdate = false;
+	} catch {
+		// File doesn't exist — needs update
+	}
 
-  if (needsUpdate) {
-    if (isWindows()) {
-      // On Windows: generate Node.js .js wrappers + .cmd shims.
-      // Bash scripts can't be executed directly on Windows.
-      // Write wrappers atomically, then write the version marker last.
-      for (const name of ["gh", "git"] as const) {
-        const wrapperBase = join(getAoBinDir(), name);
-        const nodeScript = buildNodeWrapper(name, "");
-        // Use .cjs extension to force CJS mode regardless of any parent package.json "type" field
-        await atomicWriteFile(wrapperBase + ".cjs", nodeScript, 0o644);
-        // .cmd shim: delegates to node <wrapper>.cjs forwarding all args
-        await atomicWriteFile(wrapperBase + ".cmd", `@node "%~dp0${name}.cjs" %*\r\n`, 0o644);
-      }
-    } else {
-      await atomicWriteFile(
-        join(getAoBinDir(), "ao-metadata-helper.sh"),
-        AO_METADATA_HELPER,
-        0o755,
-      );
-      // Write wrappers atomically, then write the version marker last.
-      // If we crash between wrapper writes and marker write, the next
-      // invocation will redo the writes (safe: wrappers are idempotent).
-      await atomicWriteFile(join(getAoBinDir(), "gh"), GH_WRAPPER, 0o755);
-      await atomicWriteFile(join(getAoBinDir(), "git"), GIT_WRAPPER, 0o755);
-    }
-    await atomicWriteFile(markerPath, WRAPPER_VERSION, 0o644);
-  }
+	if (needsUpdate) {
+		if (isWindows()) {
+			// On Windows: generate Node.js .js wrappers + .cmd shims.
+			// Bash scripts can't be executed directly on Windows.
+			// Write wrappers atomically, then write the version marker last.
+			for (const name of ["gh", "git"] as const) {
+				const wrapperBase = join(getAoBinDir(), name);
+				const nodeScript = buildNodeWrapper(name, "");
+				// Use .cjs extension to force CJS mode regardless of any parent package.json "type" field
+				await atomicWriteFile(wrapperBase + ".cjs", nodeScript, 0o644);
+				// .cmd shim: delegates to node <wrapper>.cjs forwarding all args
+				await atomicWriteFile(wrapperBase + ".cmd", `@node "%~dp0${name}.cjs" %*\r\n`, 0o644);
+			}
+		} else {
+			await atomicWriteFile(join(getAoBinDir(), "ao-metadata-helper.sh"), AO_METADATA_HELPER, 0o755);
+			// Write wrappers atomically, then write the version marker last.
+			// If we crash between wrapper writes and marker write, the next
+			// invocation will redo the writes (safe: wrappers are idempotent).
+			await atomicWriteFile(join(getAoBinDir(), "gh"), GH_WRAPPER, 0o755);
+			await atomicWriteFile(join(getAoBinDir(), "git"), GIT_WRAPPER, 0o755);
+		}
+		await atomicWriteFile(markerPath, WRAPPER_VERSION, 0o644);
+	}
 
-  // 2. Write AO session context to .ao/AGENTS.md (gitignored) so agents
-  //    can discover they're in a managed session. We don't modify the
-  //    repo-tracked AGENTS.md to avoid polluting worktrees with dirty state.
-  const aoAgentsMdPath = join(workspacePath, ".ao", "AGENTS.md");
-  await mkdir(join(workspacePath, ".ao"), { recursive: true });
-  // On Windows, ao-metadata-helper.sh is never created — use a platform-appropriate section
-  const agentsMdContent = isWindows()
-    ? `## Agent Orchestrator (ao) Session\n\nYou are running inside an Agent Orchestrator managed workspace.\nSession metadata is updated automatically via shell wrappers.\n`
-    : AO_AGENTS_MD_SECTION.trimStart();
-  await writeFile(aoAgentsMdPath, agentsMdContent, "utf-8");
+	// 2. Write AO session context to .ao/AGENTS.md (gitignored) so agents
+	//    can discover they're in a managed session. We don't modify the
+	//    repo-tracked AGENTS.md to avoid polluting worktrees with dirty state.
+	const aoAgentsMdPath = join(workspacePath, ".ao", "AGENTS.md");
+	await mkdir(join(workspacePath, ".ao"), { recursive: true });
+	// On Windows, ao-metadata-helper.sh is never created — use a platform-appropriate section
+	const agentsMdContent = isWindows()
+		? `## Agent Orchestrator (ao) Session\n\nYou are running inside an Agent Orchestrator managed workspace.\nSession metadata is updated automatically via shell wrappers.\n`
+		: AO_AGENTS_MD_SECTION.trimStart();
+	await writeFile(aoAgentsMdPath, agentsMdContent, "utf-8");
 }

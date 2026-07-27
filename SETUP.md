@@ -194,16 +194,16 @@ See [agent-orchestrator.yaml.example](./agent-orchestrator.yaml.example) for a f
 
 Agent Orchestrator has 8 plugin slots. All are swappable:
 
-| Slot          | Purpose              | Default       | Alternatives                                    |
-| ------------- | -------------------- | ------------- | ----------------------------------------------- |
+| Slot          | Purpose              | Default                                                         | Alternatives                                    |
+| ------------- | -------------------- | --------------------------------------------------------------- | ----------------------------------------------- |
 | **Runtime**   | How sessions run     | `tmux` (macOS/Linux) / `process` (Windows; ConPTY via node-pty) | `process`, `docker`, `kubernetes`, `ssh`, `e2b` |
-| **Agent**     | AI coding assistant  | `claude-code` | `codex`, `aider`, `goose`, custom               |
-| **Workspace** | Workspace isolation  | `worktree`    | `clone`, `copy`                                 |
-| **Tracker**   | Issue tracking       | `github`      | `linear`, `jira`, custom                        |
-| **SCM**       | Source control       | `github`      | GitLab, Bitbucket (future)                      |
-| **Notifier**  | Notifications        | `desktop`     | `slack`, `discord`, `webhook`, `email`          |
-| **Terminal**  | Terminal integration | `iterm2`      | `web`, custom                                   |
-| **Lifecycle** | Session lifecycle    | (core)        | Non-pluggable                                   |
+| **Agent**     | AI coding assistant  | `claude-code`                                                   | `codex`, `aider`, `goose`, custom               |
+| **Workspace** | Workspace isolation  | `worktree`                                                      | `clone`, `copy`                                 |
+| **Tracker**   | Issue tracking       | `github`                                                        | `linear`, `jira`, custom                        |
+| **SCM**       | Source control       | `github`                                                        | GitLab, Bitbucket (future)                      |
+| **Notifier**  | Notifications        | `desktop`                                                       | `slack`, `discord`, `webhook`, `email`          |
+| **Terminal**  | Terminal integration | `iterm2`                                                        | `web`, custom                                   |
+| **Lifecycle** | Session lifecycle    | (core)                                                          | Non-pluggable                                   |
 
 ### Reactions
 
@@ -292,7 +292,7 @@ Override defaults per project:
 ```yaml
 projects:
   frontend:
-    runtime: tmux       # default on macOS/Linux; on Windows use `process`
+    runtime: tmux # default on macOS/Linux; on Windows use `process`
     agent: claude-code
     workspace: worktree
 

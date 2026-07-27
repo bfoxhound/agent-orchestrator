@@ -6,8 +6,8 @@ import { atomicWriteFileSync } from "./atomic-write.js";
 import { parseKeyValueContent } from "./key-value.js";
 
 export const FEEDBACK_TOOL_NAMES = {
-  BUG_REPORT: "bug_report",
-  IMPROVEMENT_SUGGESTION: "improvement_suggestion",
+	BUG_REPORT: "bug_report",
+	IMPROVEMENT_SUGGESTION: "improvement_suggestion",
 } as const;
 
 export type FeedbackToolName = (typeof FEEDBACK_TOOL_NAMES)[keyof typeof FEEDBACK_TOOL_NAMES];
@@ -17,15 +17,15 @@ const normalizeText = (value: string): string => value.trim().replace(/\s+/g, " 
 const NonEmptyTextSchema = z.string().transform(normalizeText).pipe(z.string().min(1));
 
 const FeedbackInputSchema = z
-  .object({
-    title: NonEmptyTextSchema,
-    body: NonEmptyTextSchema,
-    evidence: z.array(NonEmptyTextSchema).min(1),
-    session: NonEmptyTextSchema,
-    source: NonEmptyTextSchema,
-    confidence: z.number().finite().min(0).max(1),
-  })
-  .strict();
+	.object({
+		title: NonEmptyTextSchema,
+		body: NonEmptyTextSchema,
+		evidence: z.array(NonEmptyTextSchema).min(1),
+		session: NonEmptyTextSchema,
+		source: NonEmptyTextSchema,
+		confidence: z.number().finite().min(0).max(1),
+	})
+	.strict();
 
 export const BugReportSchema = FeedbackInputSchema;
 export const ImprovementSuggestionSchema = FeedbackInputSchema;
@@ -35,170 +35,159 @@ export type ImprovementSuggestionInput = z.infer<typeof ImprovementSuggestionSch
 export type FeedbackToolInput = BugReportInput | ImprovementSuggestionInput;
 
 export interface FeedbackToolContract {
-  name: FeedbackToolName;
-  description: string;
-  schema: typeof FeedbackInputSchema;
+	name: FeedbackToolName;
+	description: string;
+	schema: typeof FeedbackInputSchema;
 }
 
 export const FEEDBACK_TOOL_CONTRACTS: Record<FeedbackToolName, FeedbackToolContract> = {
-  bug_report: {
-    name: FEEDBACK_TOOL_NAMES.BUG_REPORT,
-    description: "Capture reproducible bugs found while working in AO sessions.",
-    schema: BugReportSchema,
-  },
-  improvement_suggestion: {
-    name: FEEDBACK_TOOL_NAMES.IMPROVEMENT_SUGGESTION,
-    description: "Capture actionable improvement suggestions discovered in AO sessions.",
-    schema: ImprovementSuggestionSchema,
-  },
+	bug_report: {
+		name: FEEDBACK_TOOL_NAMES.BUG_REPORT,
+		description: "Capture reproducible bugs found while working in AO sessions.",
+		schema: BugReportSchema,
+	},
+	improvement_suggestion: {
+		name: FEEDBACK_TOOL_NAMES.IMPROVEMENT_SUGGESTION,
+		description: "Capture actionable improvement suggestions discovered in AO sessions.",
+		schema: ImprovementSuggestionSchema,
+	},
 };
 
 export interface PersistedFeedbackReport extends FeedbackToolInput {
-  id: string;
-  tool: FeedbackToolName;
-  createdAt: string;
-  dedupeKey: string;
+	id: string;
+	tool: FeedbackToolName;
+	createdAt: string;
+	dedupeKey: string;
 }
 
 const ReportIdSchema = z.string().regex(/^report_[A-Za-z0-9_-]+$/);
 const ISODateSchema = z.string().datetime({ offset: true });
 const DedupeKeySchema = z.string().regex(/^[a-f0-9]{16}$/);
 
-export function validateFeedbackToolInput(
-  tool: FeedbackToolName,
-  input: FeedbackToolInput,
-): FeedbackToolInput {
-  return FEEDBACK_TOOL_CONTRACTS[tool].schema.parse(input);
+export function validateFeedbackToolInput(tool: FeedbackToolName, input: FeedbackToolInput): FeedbackToolInput {
+	return FEEDBACK_TOOL_CONTRACTS[tool].schema.parse(input);
 }
 
-export function generateFeedbackDedupeKey(
-  tool: FeedbackToolName,
-  input: FeedbackToolInput,
-): string {
-  const canonicalEvidence = [...input.evidence]
-    .map((item) => normalizeText(item).toLowerCase())
-    .sort();
-  const canonical = JSON.stringify({
-    tool,
-    title: normalizeText(input.title).toLowerCase(),
-    body: normalizeText(input.body).toLowerCase(),
-    session: normalizeText(input.session).toLowerCase(),
-    source: normalizeText(input.source).toLowerCase(),
-    evidence: canonicalEvidence,
-  });
+export function generateFeedbackDedupeKey(tool: FeedbackToolName, input: FeedbackToolInput): string {
+	const canonicalEvidence = [...input.evidence].map((item) => normalizeText(item).toLowerCase()).sort();
+	const canonical = JSON.stringify({
+		tool,
+		title: normalizeText(input.title).toLowerCase(),
+		body: normalizeText(input.body).toLowerCase(),
+		session: normalizeText(input.session).toLowerCase(),
+		source: normalizeText(input.source).toLowerCase(),
+		evidence: canonicalEvidence,
+	});
 
-  return createHash("sha256").update(canonical).digest("hex").slice(0, 16);
+	return createHash("sha256").update(canonical).digest("hex").slice(0, 16);
 }
 
 function serializeReport(report: PersistedFeedbackReport): string {
-  const lines: string[] = [
-    "version=1",
-    `id=${report.id}`,
-    `tool=${report.tool}`,
-    `createdAt=${report.createdAt}`,
-    `dedupeKey=${report.dedupeKey}`,
-    `title=${report.title}`,
-    `body=${report.body}`,
-    `session=${report.session}`,
-    `source=${report.source}`,
-    `confidence=${report.confidence}`,
-  ];
+	const lines: string[] = [
+		"version=1",
+		`id=${report.id}`,
+		`tool=${report.tool}`,
+		`createdAt=${report.createdAt}`,
+		`dedupeKey=${report.dedupeKey}`,
+		`title=${report.title}`,
+		`body=${report.body}`,
+		`session=${report.session}`,
+		`source=${report.source}`,
+		`confidence=${report.confidence}`,
+	];
 
-  for (const [index, evidenceItem] of report.evidence.entries()) {
-    lines.push(`evidence.${index}=${evidenceItem}`);
-  }
+	for (const [index, evidenceItem] of report.evidence.entries()) {
+		lines.push(`evidence.${index}=${evidenceItem}`);
+	}
 
-  return `${lines.join("\n")}\n`;
+	return `${lines.join("\n")}\n`;
 }
 
 function parseReportFile(content: string): PersistedFeedbackReport {
-  const raw = parseKeyValueContent(content);
+	const raw = parseKeyValueContent(content);
 
-  const evidence = Object.entries(raw)
-    .filter(([key]) => key.startsWith("evidence."))
-    .map(([key, value]) => ({
-      index: Number.parseInt(key.split(".")[1] ?? "0", 10),
-      value,
-    }))
-    .sort((a, b) => a.index - b.index)
-    .map((item) => item.value);
+	const evidence = Object.entries(raw)
+		.filter(([key]) => key.startsWith("evidence."))
+		.map(([key, value]) => ({
+			index: Number.parseInt(key.split(".")[1] ?? "0", 10),
+			value,
+		}))
+		.sort((a, b) => a.index - b.index)
+		.map((item) => item.value);
 
-  const tool = raw["tool"];
-  if (
-    tool !== FEEDBACK_TOOL_NAMES.BUG_REPORT &&
-    tool !== FEEDBACK_TOOL_NAMES.IMPROVEMENT_SUGGESTION
-  ) {
-    throw new Error(`Invalid feedback report tool type: ${tool ?? "unknown"}`);
-  }
+	const tool = raw["tool"];
+	if (tool !== FEEDBACK_TOOL_NAMES.BUG_REPORT && tool !== FEEDBACK_TOOL_NAMES.IMPROVEMENT_SUGGESTION) {
+		throw new Error(`Invalid feedback report tool type: ${tool ?? "unknown"}`);
+	}
 
-  const parsedInput = FEEDBACK_TOOL_CONTRACTS[tool].schema.parse({
-    title: raw["title"] ?? "",
-    body: raw["body"] ?? "",
-    evidence,
-    session: raw["session"] ?? "",
-    source: raw["source"] ?? "",
-    confidence: Number(raw["confidence"]),
-  });
+	const parsedInput = FEEDBACK_TOOL_CONTRACTS[tool].schema.parse({
+		title: raw["title"] ?? "",
+		body: raw["body"] ?? "",
+		evidence,
+		session: raw["session"] ?? "",
+		source: raw["source"] ?? "",
+		confidence: Number(raw["confidence"]),
+	});
 
-  return {
-    id: ReportIdSchema.parse(raw["id"] ?? ""),
-    tool,
-    createdAt: ISODateSchema.parse(raw["createdAt"] ?? ""),
-    dedupeKey: DedupeKeySchema.parse(raw["dedupeKey"] ?? ""),
-    ...parsedInput,
-  };
+	return {
+		id: ReportIdSchema.parse(raw["id"] ?? ""),
+		tool,
+		createdAt: ISODateSchema.parse(raw["createdAt"] ?? ""),
+		dedupeKey: DedupeKeySchema.parse(raw["dedupeKey"] ?? ""),
+		...parsedInput,
+	};
 }
 
 function isReportFileName(fileName: string): boolean {
-  return /^report_[A-Za-z0-9_-]+\.kv$/.test(fileName);
+	return /^report_[A-Za-z0-9_-]+\.kv$/.test(fileName);
 }
 
 export class FeedbackReportStore {
-  constructor(private readonly reportsDir: string) {}
+	constructor(private readonly reportsDir: string) {}
 
-  persist(tool: FeedbackToolName, input: FeedbackToolInput): PersistedFeedbackReport {
-    const validated = validateFeedbackToolInput(tool, input);
-    const createdAt = new Date().toISOString();
-    const dedupeKey = generateFeedbackDedupeKey(tool, validated);
-    const id = `report_${createdAt.replace(/[:.]/g, "-")}_${randomUUID().slice(0, 8)}`;
+	persist(tool: FeedbackToolName, input: FeedbackToolInput): PersistedFeedbackReport {
+		const validated = validateFeedbackToolInput(tool, input);
+		const createdAt = new Date().toISOString();
+		const dedupeKey = generateFeedbackDedupeKey(tool, validated);
+		const id = `report_${createdAt.replace(/[:.]/g, "-")}_${randomUUID().slice(0, 8)}`;
 
-    const report: PersistedFeedbackReport = {
-      id,
-      tool,
-      createdAt,
-      dedupeKey,
-      ...validated,
-    };
+		const report: PersistedFeedbackReport = {
+			id,
+			tool,
+			createdAt,
+			dedupeKey,
+			...validated,
+		};
 
-    mkdirSync(this.reportsDir, { recursive: true });
-    const filePath = join(this.reportsDir, `${id}.kv`);
-    atomicWriteFileSync(filePath, serializeReport(report));
+		mkdirSync(this.reportsDir, { recursive: true });
+		const filePath = join(this.reportsDir, `${id}.kv`);
+		atomicWriteFileSync(filePath, serializeReport(report));
 
-    return report;
-  }
+		return report;
+	}
 
-  list(): PersistedFeedbackReport[] {
-    if (!existsSync(this.reportsDir)) return [];
+	list(): PersistedFeedbackReport[] {
+		if (!existsSync(this.reportsDir)) return [];
 
-    const reports: PersistedFeedbackReport[] = [];
-    for (const name of readdirSync(this.reportsDir)) {
-      if (!isReportFileName(name)) continue;
-      const reportPath = join(this.reportsDir, name);
-      try {
-        if (!statSync(reportPath).isFile()) continue;
-      } catch {
-        continue;
-      }
+		const reports: PersistedFeedbackReport[] = [];
+		for (const name of readdirSync(this.reportsDir)) {
+			if (!isReportFileName(name)) continue;
+			const reportPath = join(this.reportsDir, name);
+			try {
+				if (!statSync(reportPath).isFile()) continue;
+			} catch {
+				continue;
+			}
 
-      try {
-        const content = readFileSync(reportPath, "utf-8");
-        const parsed = parseReportFile(content);
-        reports.push(parsed);
-      } catch {
-        continue;
-      }
-    }
+			try {
+				const content = readFileSync(reportPath, "utf-8");
+				const parsed = parseReportFile(content);
+				reports.push(parsed);
+			} catch {
+				continue;
+			}
+		}
 
-    return reports.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-  }
+		return reports.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+	}
 }

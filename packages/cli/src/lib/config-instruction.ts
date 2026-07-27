@@ -5,7 +5,7 @@
 import { CONFIG_SCHEMA_URL } from "@aoagents/ao-core";
 
 export function getConfigInstruction(): string {
-  return `
+	return `
 # Agent Orchestrator Config Reference
 # File: agent-orchestrator.yaml
 

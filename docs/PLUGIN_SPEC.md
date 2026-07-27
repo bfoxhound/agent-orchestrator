@@ -8,9 +8,9 @@ Plugins are standard Node.js modules that export a `PluginModule`:
 
 ```ts
 export interface PluginModule<T = unknown> {
-  manifest: PluginManifest;
-  create(config?: Record<string, unknown>): T;
-  detect?(): boolean;
+	manifest: PluginManifest;
+	create(config?: Record<string, unknown>): T;
+	detect?(): boolean;
 }
 ```
 
@@ -18,10 +18,10 @@ Minimum manifest shape:
 
 ```ts
 export interface PluginManifest {
-  name: string;
-  slot: PluginSlot;
-  description: string;
-  version: string;
+	name: string;
+	slot: PluginSlot;
+	description: string;
+	version: string;
 }
 ```
 
@@ -54,17 +54,17 @@ Recommended package shape:
 
 ```json
 {
-  "name": "@aoagents/ao-plugin-example",
-  "version": "0.1.0",
-  "type": "module",
-  "main": "dist/index.js",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
-  },
-  "files": ["dist"]
+	"name": "@aoagents/ao-plugin-example",
+	"version": "0.1.0",
+	"type": "module",
+	"main": "dist/index.js",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"files": ["dist"]
 }
 ```
 

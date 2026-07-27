@@ -18,12 +18,12 @@ ao setup openclaw --url http://127.0.0.1:18789/hooks/agent --token YOUR_TOKEN --
 
 ```json
 {
-  "hooks": {
-    "enabled": true,
-    "token": "<your-hooks-token>",
-    "allowRequestSessionKey": true,
-    "allowedSessionKeyPrefixes": ["hook:"]
-  }
+	"hooks": {
+		"enabled": true,
+		"token": "<your-hooks-token>",
+		"allowRequestSessionKey": true,
+		"allowedSessionKeyPrefixes": ["hook:"]
+	}
 }
 ```
 

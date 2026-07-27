@@ -33,21 +33,21 @@ const STORAGE_KEY_PATTERN = /^[a-f0-9]{12}(-.+)?$/;
 
 /** Filesystem accessors injected for testability. */
 interface FsAdapter {
-  readdir: (path: string) => string[];
-  exists: (path: string) => boolean;
-  homedir: () => string;
+	readdir: (path: string) => string[];
+	exists: (path: string) => boolean;
+	homedir: () => string;
 }
 
 const defaultFs: FsAdapter = {
-  // Only return subdirectory names. `readdirSync` without withFileTypes
-  // includes plain files, so a stray file like `aabbccddeef0` would pass
-  // STORAGE_KEY_PATTERN and trigger an unnecessary existsSync probe.
-  readdir: (p) =>
-    readdirSync(p, { withFileTypes: true })
-      .filter((e) => e.isDirectory())
-      .map((e) => e.name),
-  exists: (p) => existsSync(p),
-  homedir,
+	// Only return subdirectory names. `readdirSync` without withFileTypes
+	// includes plain files, so a stray file like `aabbccddeef0` would pass
+	// STORAGE_KEY_PATTERN and trigger an unnecessary existsSync probe.
+	readdir: (p) =>
+		readdirSync(p, { withFileTypes: true })
+			.filter((e) => e.isDirectory())
+			.map((e) => e.name),
+	exists: (p) => existsSync(p),
+	homedir,
 };
 
 /**
@@ -64,34 +64,30 @@ const defaultFs: FsAdapter = {
  * it finds a live tmux session — otherwise a stale metadata dir from
  * one project could shadow the live session of another.
  */
-function findStorageKeysForSession(
-  sessionId: string,
-  fs: FsAdapter,
-  projectId?: string,
-): string[] {
-  const aoBase = join(fs.homedir(), ".agent-orchestrator");
-  let entries: string[];
-  try {
-    entries = fs.readdir(aoBase);
-  } catch {
-    return [];
-  }
+function findStorageKeysForSession(sessionId: string, fs: FsAdapter, projectId?: string): string[] {
+	const aoBase = join(fs.homedir(), ".agent-orchestrator");
+	let entries: string[];
+	try {
+		entries = fs.readdir(aoBase);
+	} catch {
+		return [];
+	}
 
-  const matches: string[] = [];
-  const projectMatches: string[] = [];
-  for (const entry of entries) {
-    if (!STORAGE_KEY_PATTERN.test(entry)) continue;
-    const sessionFile = join(aoBase, entry, "sessions", sessionId);
-    if (fs.exists(sessionFile)) {
-      const unwrappedProjectId = entry.slice(13); // Strip "{hash}-" prefix when present.
-      if (projectId && (entry === projectId || unwrappedProjectId === projectId)) {
-        projectMatches.push(entry);
-      } else {
-        matches.push(entry);
-      }
-    }
-  }
-  return [...projectMatches, ...matches];
+	const matches: string[] = [];
+	const projectMatches: string[] = [];
+	for (const entry of entries) {
+		if (!STORAGE_KEY_PATTERN.test(entry)) continue;
+		const sessionFile = join(aoBase, entry, "sessions", sessionId);
+		if (fs.exists(sessionFile)) {
+			const unwrappedProjectId = entry.slice(13); // Strip "{hash}-" prefix when present.
+			if (projectId && (entry === projectId || unwrappedProjectId === projectId)) {
+				projectMatches.push(entry);
+			} else {
+				matches.push(entry);
+			}
+		}
+	}
+	return [...projectMatches, ...matches];
 }
 
 /**
@@ -99,7 +95,7 @@ function findStorageKeysForSession(
  * Prevents path traversal, shell injection, and other attacks.
  */
 export function validateSessionId(sessionId: string): boolean {
-  return SESSION_ID_PATTERN.test(sessionId);
+	return SESSION_ID_PATTERN.test(sessionId);
 }
 
 /**
@@ -111,32 +107,26 @@ export function validateSessionId(sessionId: string): boolean {
  *
  * @param execFn - Injectable execFileSync for testing. Defaults to child_process.execFileSync.
  */
-export function findTmux(
-  execFn: typeof execFileSync = execFileSync,
-): string | null {
-  if (isWindows()) return null;
-  const candidates = [
-    "/opt/homebrew/bin/tmux", // macOS ARM (Homebrew)
-    "/usr/local/bin/tmux", // macOS Intel (Homebrew)
-    "/usr/bin/tmux", // Linux
-  ];
-  for (const p of candidates) {
-    try {
-      execFn(p, ["-V"], { timeout: 5000 });
-      return p;
-    } catch {
-      continue;
-    }
-  }
-  return "tmux"; // Fall back to bare name
+export function findTmux(execFn: typeof execFileSync = execFileSync): string | null {
+	if (isWindows()) return null;
+	const candidates = [
+		"/opt/homebrew/bin/tmux", // macOS ARM (Homebrew)
+		"/usr/local/bin/tmux", // macOS Intel (Homebrew)
+		"/usr/bin/tmux", // Linux
+	];
+	for (const p of candidates) {
+		try {
+			execFn(p, ["-V"], { timeout: 5000 });
+			return p;
+		} catch {
+			continue;
+		}
+	}
+	return "tmux"; // Fall back to bare name
 }
 
 /** Async exec signature used by `tmuxHasSession` (and injectable for tests). */
-export type ExecFileAsync = (
-  file: string,
-  args: readonly string[],
-  options: { timeout: number },
-) => Promise<unknown>;
+export type ExecFileAsync = (file: string, args: readonly string[], options: { timeout: number }) => Promise<unknown>;
 
 /**
  * Check whether a tmux session with the given name exists.
@@ -157,17 +147,17 @@ export type ExecFileAsync = (
  *   not running, no sessions, or any unexpected error)
  */
 export async function tmuxHasSession(
-  tmuxPath: string | null,
-  tmuxSessionName: string,
-  execFn: ExecFileAsync = execFileAsync as unknown as ExecFileAsync,
+	tmuxPath: string | null,
+	tmuxSessionName: string,
+	execFn: ExecFileAsync = execFileAsync as unknown as ExecFileAsync,
 ): Promise<boolean> {
-  if (!tmuxPath) return false;
-  try {
-    await execFn(tmuxPath, ["has-session", "-t", `=${tmuxSessionName}`], { timeout: 5000 });
-    return true;
-  } catch {
-    return false;
-  }
+	if (!tmuxPath) return false;
+	try {
+		await execFn(tmuxPath, ["has-session", "-t", `=${tmuxSessionName}`], { timeout: 5000 });
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 /**
@@ -196,59 +186,57 @@ export async function tmuxHasSession(
  * @returns The actual tmux session name, or null if not found
  */
 export function resolveTmuxSession(
-  sessionId: string,
-  tmuxPath: string | null,
-  execFn: typeof execFileSync = execFileSync,
-  fs: FsAdapter = defaultFs,
-  projectId?: string,
+	sessionId: string,
+	tmuxPath: string | null,
+	execFn: typeof execFileSync = execFileSync,
+	fs: FsAdapter = defaultFs,
+	projectId?: string,
 ): string | null {
-  if (!tmuxPath) return null;
-  // Try exact match first using = prefix for exact matching (e.g., "ao-orchestrator")
-  // Without =, tmux uses prefix matching: "ao-1" would match "ao-15"
-  try {
-    execFn(tmuxPath, ["has-session", "-t", `=${sessionId}`], { timeout: 5000 });
-    return sessionId;
-  } catch {
-    // Not an exact match
-  }
+	if (!tmuxPath) return null;
+	// Try exact match first using = prefix for exact matching (e.g., "ao-orchestrator")
+	// Without =, tmux uses prefix matching: "ao-1" would match "ao-15"
+	try {
+		execFn(tmuxPath, ["has-session", "-t", `=${sessionId}`], { timeout: 5000 });
+		return sessionId;
+	} catch {
+		// Not an exact match
+	}
 
-  // Authoritative path: find candidate storageKeys on disk, then verify
-  // each exact tmux session name with has-session. This is unambiguous
-  // even when the storageKey is wrapped (`{hash}-{projectName}`). Walk
-  // every candidate so a stale metadata dir in one project can't shadow
-  // the live session of another project with the same sessionId.
-  for (const storageKey of findStorageKeysForSession(sessionId, fs, projectId)) {
-    const tmuxName = `${storageKey}-${sessionId}`;
-    try {
-      execFn(tmuxPath, ["has-session", "-t", `=${tmuxName}`], { timeout: 5000 });
-      return tmuxName;
-    } catch {
-      // Session dir exists but tmux session doesn't — try next candidate
-    }
-  }
+	// Authoritative path: find candidate storageKeys on disk, then verify
+	// each exact tmux session name with has-session. This is unambiguous
+	// even when the storageKey is wrapped (`{hash}-{projectName}`). Walk
+	// every candidate so a stale metadata dir in one project can't shadow
+	// the live session of another project with the same sessionId.
+	for (const storageKey of findStorageKeysForSession(sessionId, fs, projectId)) {
+		const tmuxName = `${storageKey}-${sessionId}`;
+		try {
+			execFn(tmuxPath, ["has-session", "-t", `=${tmuxName}`], { timeout: 5000 });
+			return tmuxName;
+		} catch {
+			// Session dir exists but tmux session doesn't — try next candidate
+		}
+	}
 
-  // Fallback: list sessions and match the bare-hash form only. We
-  // intentionally do NOT match by trailing suffix here — that would cause
-  // `app-1` to falsely resolve a distinct session `{hash}-my-app-1`. If a
-  // wrapped-storageKey session isn't findable on disk above, it's safer
-  // to return null than to guess.
-  try {
-    const output = execFn(tmuxPath, ["list-sessions", "-F", "#{session_name}"], {
-      timeout: 5000,
-      encoding: "utf8",
-    }) as string;
-    const sessions = output.split("\n").filter(Boolean);
-    const match = sessions.find(
-      (s) => HASH_PREFIX_PATTERN.test(s) && s.substring(13) === sessionId,
-    );
-    if (match) {
-      return match;
-    }
-  } catch {
-    // tmux not running or no sessions
-  }
+	// Fallback: list sessions and match the bare-hash form only. We
+	// intentionally do NOT match by trailing suffix here — that would cause
+	// `app-1` to falsely resolve a distinct session `{hash}-my-app-1`. If a
+	// wrapped-storageKey session isn't findable on disk above, it's safer
+	// to return null than to guess.
+	try {
+		const output = execFn(tmuxPath, ["list-sessions", "-F", "#{session_name}"], {
+			timeout: 5000,
+			encoding: "utf8",
+		}) as string;
+		const sessions = output.split("\n").filter(Boolean);
+		const match = sessions.find((s) => HASH_PREFIX_PATTERN.test(s) && s.substring(13) === sessionId);
+		if (match) {
+			return match;
+		}
+	} catch {
+		// tmux not running or no sessions
+	}
 
-  return null;
+	return null;
 }
 
 /**
@@ -270,72 +258,72 @@ export function resolveTmuxSession(
  * @returns Full pipe path (e.g., "\\\\.\\pipe\\ao-pty-win1-orchestrator"), or null
  */
 export function resolvePipePath(
-  sessionId: string,
-  projectId?: string,
-  fs: Pick<FsAdapter, "readdir" | "exists" | "homedir"> & {
-    readFile?: (path: string) => string;
-  } = defaultFs,
+	sessionId: string,
+	projectId?: string,
+	fs: Pick<FsAdapter, "readdir" | "exists" | "homedir"> & {
+		readFile?: (path: string) => string;
+	} = defaultFs,
 ): string | null {
-  if (!isWindows()) return null;
+	if (!isWindows()) return null;
 
-  const readFile = fs.readFile ?? ((p: string) => readFileSync(p, "utf8"));
-  const aoBase = join(fs.homedir(), ".agent-orchestrator");
+	const readFile = fs.readFile ?? ((p: string) => readFileSync(p, "utf8"));
+	const aoBase = join(fs.homedir(), ".agent-orchestrator");
 
-  const readPipeFromV2 = (project: string): string | null => {
-    const sessionFile = join(aoBase, "projects", project, "sessions", `${sessionId}.json`);
-    if (!fs.exists(sessionFile)) return null;
-    try {
-      const meta = JSON.parse(readFile(sessionFile)) as {
-        runtimeHandle?: { data?: { pipePath?: string } };
-      };
-      const pipePath = meta.runtimeHandle?.data?.pipePath;
-      return typeof pipePath === "string" && pipePath.length > 0 ? pipePath : null;
-    } catch {
-      return null;
-    }
-  };
+	const readPipeFromV2 = (project: string): string | null => {
+		const sessionFile = join(aoBase, "projects", project, "sessions", `${sessionId}.json`);
+		if (!fs.exists(sessionFile)) return null;
+		try {
+			const meta = JSON.parse(readFile(sessionFile)) as {
+				runtimeHandle?: { data?: { pipePath?: string } };
+			};
+			const pipePath = meta.runtimeHandle?.data?.pipePath;
+			return typeof pipePath === "string" && pipePath.length > 0 ? pipePath : null;
+		} catch {
+			return null;
+		}
+	};
 
-  // V2: prefer the caller's projectId when provided; otherwise walk all projects
-  const projectsDir = join(aoBase, "projects");
-  if (projectId) {
-    const pipe = readPipeFromV2(projectId);
-    if (pipe) return pipe;
-  } else if (fs.exists(projectsDir)) {
-    let projects: string[];
-    try {
-      projects = fs.readdir(projectsDir);
-    } catch {
-      projects = [];
-    }
-    for (const project of projects) {
-      const pipe = readPipeFromV2(project);
-      if (pipe) return pipe;
-    }
-  }
+	// V2: prefer the caller's projectId when provided; otherwise walk all projects
+	const projectsDir = join(aoBase, "projects");
+	if (projectId) {
+		const pipe = readPipeFromV2(projectId);
+		if (pipe) return pipe;
+	} else if (fs.exists(projectsDir)) {
+		let projects: string[];
+		try {
+			projects = fs.readdir(projectsDir);
+		} catch {
+			projects = [];
+		}
+		for (const project of projects) {
+			const pipe = readPipeFromV2(project);
+			if (pipe) return pipe;
+		}
+	}
 
-  // V1 fallback: line-delimited key=value under {storageKey}/sessions/{sessionId}
-  for (const storageKey of findStorageKeysForSession(sessionId, {
-    readdir: fs.readdir,
-    exists: fs.exists,
-    homedir: fs.homedir,
-  })) {
-    const sessionFile = join(aoBase, storageKey, "sessions", sessionId);
-    let content: string;
-    try {
-      content = readFile(sessionFile);
-    } catch {
-      continue;
-    }
-    const match = content.match(/^runtimeHandle=(.+)$/m);
-    if (!match) continue;
-    try {
-      const handle = JSON.parse(match[1]) as { data?: { pipePath?: string } };
-      const pipePath = handle.data?.pipePath;
-      if (pipePath && pipePath.length > 0) return pipePath;
-    } catch {
-      continue;
-    }
-  }
+	// V1 fallback: line-delimited key=value under {storageKey}/sessions/{sessionId}
+	for (const storageKey of findStorageKeysForSession(sessionId, {
+		readdir: fs.readdir,
+		exists: fs.exists,
+		homedir: fs.homedir,
+	})) {
+		const sessionFile = join(aoBase, storageKey, "sessions", sessionId);
+		let content: string;
+		try {
+			content = readFile(sessionFile);
+		} catch {
+			continue;
+		}
+		const match = content.match(/^runtimeHandle=(.+)$/m);
+		if (!match) continue;
+		try {
+			const handle = JSON.parse(match[1]) as { data?: { pipePath?: string } };
+			const pipePath = handle.data?.pipePath;
+			if (pipePath && pipePath.length > 0) return pipePath;
+		} catch {
+			continue;
+		}
+	}
 
-  return null;
+	return null;
 }

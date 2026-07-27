@@ -22,42 +22,39 @@ import { getConfigInstruction } from "./lib/config-instruction.js";
 import { getCliVersion } from "./options/version.js";
 
 export function createProgram(): Command {
-  const program = new Command();
+	const program = new Command();
 
-  program
-    .name("ao")
-    .description("Agent Orchestrator — manage parallel AI coding agents")
-    .version(getCliVersion());
+	program.name("ao").description("Agent Orchestrator — manage parallel AI coding agents").version(getCliVersion());
 
-  registerStart(program);
-  registerStop(program);
-  registerStatus(program);
-  registerSpawn(program);
-  registerBatchSpawn(program);
-  registerSession(program);
-  registerSend(program);
-  registerAcknowledge(program);
-  registerReport(program);
-  registerReviewCheck(program);
-  registerDashboard(program);
-  registerOpen(program);
-  registerVerify(program);
-  registerDoctor(program);
-  registerUpdate(program);
-  registerSetup(program);
-  registerPlugin(program);
-  registerProjectCommand(program);
-  registerMigrateStorage(program);
-  registerCompletion(program);
-  registerEvents(program);
-  registerConfig(program);
+	registerStart(program);
+	registerStop(program);
+	registerStatus(program);
+	registerSpawn(program);
+	registerBatchSpawn(program);
+	registerSession(program);
+	registerSend(program);
+	registerAcknowledge(program);
+	registerReport(program);
+	registerReviewCheck(program);
+	registerDashboard(program);
+	registerOpen(program);
+	registerVerify(program);
+	registerDoctor(program);
+	registerUpdate(program);
+	registerSetup(program);
+	registerPlugin(program);
+	registerProjectCommand(program);
+	registerMigrateStorage(program);
+	registerCompletion(program);
+	registerEvents(program);
+	registerConfig(program);
 
-  program
-    .command("config-help")
-    .description("Show config schema and guide for creating agent-orchestrator.yaml")
-    .action(() => {
-      console.log(getConfigInstruction());
-    });
+	program
+		.command("config-help")
+		.description("Show config schema and guide for creating agent-orchestrator.yaml")
+		.action(() => {
+			console.log(getConfigInstruction());
+		});
 
-  return program;
+	return program;
 }

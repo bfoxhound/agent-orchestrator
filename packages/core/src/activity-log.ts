@@ -25,7 +25,7 @@ export const ACTIVITY_INPUT_STALENESS_MS = 5 * 60 * 1000; // 5 minutes
  * Location: `{workspacePath}/.ao/activity.jsonl`
  */
 export function getActivityLogPath(workspacePath: string): string {
-  return join(workspacePath, ".ao", "activity.jsonl");
+	return join(workspacePath, ".ao", "activity.jsonl");
 }
 
 /**
@@ -33,23 +33,22 @@ export function getActivityLogPath(workspacePath: string): string {
  * Creates the `.ao/` directory if it doesn't exist.
  */
 export async function appendActivityEntry(
-  workspacePath: string,
-  state: ActivityState,
-  source: "terminal" | "native",
-  trigger?: string,
+	workspacePath: string,
+	state: ActivityState,
+	source: "terminal" | "native",
+	trigger?: string,
 ): Promise<void> {
-  const logPath = getActivityLogPath(workspacePath);
-  await mkdir(dirname(logPath), { recursive: true });
+	const logPath = getActivityLogPath(workspacePath);
+	await mkdir(dirname(logPath), { recursive: true });
 
-  const entry: ActivityLogEntry = {
-    ts: new Date().toISOString(),
-    state,
-    source,
-    ...(trigger !== undefined &&
-      (state === "waiting_input" || state === "blocked") && { trigger }),
-  };
+	const entry: ActivityLogEntry = {
+		ts: new Date().toISOString(),
+		state,
+		source,
+		...(trigger !== undefined && (state === "waiting_input" || state === "blocked") && { trigger }),
+	};
 
-  await appendFile(logPath, JSON.stringify(entry) + "\n", "utf-8");
+	await appendFile(logPath, JSON.stringify(entry) + "\n", "utf-8");
 }
 
 /**
@@ -58,70 +57,70 @@ export async function appendActivityEntry(
  * the file doesn't exist or is empty.
  */
 export async function readLastActivityEntry(
-  workspacePath: string,
+	workspacePath: string,
 ): Promise<{ entry: ActivityLogEntry; modifiedAt: Date } | null> {
-  const logPath = getActivityLogPath(workspacePath);
+	const logPath = getActivityLogPath(workspacePath);
 
-  try {
-    const { open } = await import("node:fs/promises");
-    const handle = await open(logPath, "r");
-    try {
-      const fileStat = await handle.stat();
-      if (fileStat.size === 0) return null;
+	try {
+		const { open } = await import("node:fs/promises");
+		const handle = await open(logPath, "r");
+		try {
+			const fileStat = await handle.stat();
+			if (fileStat.size === 0) return null;
 
-      // Read last 4KB — more than enough for a single JSON line
-      const tailSize = Math.min(fileStat.size, 4096);
-      const offset = Math.max(0, fileStat.size - tailSize);
-      const buffer = Buffer.alloc(tailSize);
-      const { bytesRead } = await handle.read(buffer, 0, tailSize, offset);
-      if (bytesRead === 0) return null;
-      const content = buffer.subarray(0, bytesRead).toString("utf-8");
+			// Read last 4KB — more than enough for a single JSON line
+			const tailSize = Math.min(fileStat.size, 4096);
+			const offset = Math.max(0, fileStat.size - tailSize);
+			const buffer = Buffer.alloc(tailSize);
+			const { bytesRead } = await handle.read(buffer, 0, tailSize, offset);
+			if (bytesRead === 0) return null;
+			const content = buffer.subarray(0, bytesRead).toString("utf-8");
 
-      // Find the last non-empty line. If we read from a non-zero offset,
-      // the first line may be truncated — drop it.
-      let lines = content.split("\n").filter((l) => l.trim());
-      if (offset > 0 && lines.length > 1) lines = lines.slice(1);
-      if (lines.length === 0) return null;
+			// Find the last non-empty line. If we read from a non-zero offset,
+			// the first line may be truncated — drop it.
+			let lines = content.split("\n").filter((l) => l.trim());
+			if (offset > 0 && lines.length > 1) lines = lines.slice(1);
+			if (lines.length === 0) return null;
 
-      // Try lines from the end — skip any that fail to parse (e.g. truncated)
-      let parsed: unknown = null;
-      for (let i = lines.length - 1; i >= 0; i--) {
-        try {
-          parsed = JSON.parse(lines[i]!);
-          break;
-        } catch {
-          continue;
-        }
-      }
-      if (parsed === null) return null;
-      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
+			// Try lines from the end — skip any that fail to parse (e.g. truncated)
+			let parsed: unknown = null;
+			for (let i = lines.length - 1; i >= 0; i--) {
+				try {
+					parsed = JSON.parse(lines[i]!);
+					break;
+				} catch {
+					continue;
+				}
+			}
+			if (parsed === null) return null;
+			if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
 
-      const record = parsed as Record<string, unknown>;
-      const validStates = new Set(["active", "ready", "idle", "waiting_input", "blocked", "exited"]);
-      const validSources = new Set(["terminal", "native"]);
-      if (
-        typeof record.ts !== "string" ||
-        typeof record.state !== "string" ||
-        typeof record.source !== "string" ||
-        !validStates.has(record.state) ||
-        !validSources.has(record.source)
-      ) {
-        return null;
-      }
+			const record = parsed as Record<string, unknown>;
+			const validStates = new Set(["active", "ready", "idle", "waiting_input", "blocked", "exited"]);
+			const validSources = new Set(["terminal", "native"]);
+			if (
+				typeof record.ts !== "string" ||
+				typeof record.state !== "string" ||
+				typeof record.source !== "string" ||
+				!validStates.has(record.state) ||
+				!validSources.has(record.source)
+			) {
+				return null;
+			}
 
-      const entry: ActivityLogEntry = {
-        ts: record.ts,
-        state: record.state as ActivityLogEntry["state"],
-        source: record.source as ActivityLogEntry["source"],
-        ...(typeof record.trigger === "string" && { trigger: record.trigger }),
-      };
-      return { entry, modifiedAt: fileStat.mtime };
-    } finally {
-      await handle.close();
-    }
-  } catch {
-    return null;
-  }
+			const entry: ActivityLogEntry = {
+				ts: record.ts,
+				state: record.state as ActivityLogEntry["state"],
+				source: record.source as ActivityLogEntry["source"],
+				...(typeof record.trigger === "string" && { trigger: record.trigger }),
+			};
+			return { entry, modifiedAt: fileStat.mtime };
+		} finally {
+			await handle.close();
+		}
+	} catch {
+		return null;
+	}
 }
 
 /**
@@ -135,20 +134,20 @@ export async function readLastActivityEntry(
  * shadowing those richer detection methods and breaking stuck-detection.
  */
 export function checkActivityLogState(
-  activityResult: { entry: ActivityLogEntry; modifiedAt: Date } | null,
+	activityResult: { entry: ActivityLogEntry; modifiedAt: Date } | null,
 ): ActivityDetection | null {
-  if (!activityResult) return null;
+	if (!activityResult) return null;
 
-  const { entry } = activityResult;
+	const { entry } = activityResult;
 
-  if (entry.state === "waiting_input" || entry.state === "blocked") {
-    const entryTs = new Date(entry.ts);
-    if (Number.isNaN(entryTs.getTime())) return null;
-    return { state: entry.state, timestamp: entryTs };
-  }
+	if (entry.state === "waiting_input" || entry.state === "blocked") {
+		const entryTs = new Date(entry.ts);
+		if (Number.isNaN(entryTs.getTime())) return null;
+		return { state: entry.state, timestamp: entryTs };
+	}
 
-  // Non-critical states fall through to native signals
-  return null;
+	// Non-critical states fall through to native signals
+	return null;
 }
 
 /**
@@ -160,34 +159,34 @@ export function checkActivityLogState(
  * Use this as a last-resort fallback when native signals are unavailable.
  */
 export function getActivityFallbackState(
-  activityResult: { entry: ActivityLogEntry; modifiedAt: Date } | null,
-  activeWindowMs: number,
-  thresholdMs: number,
+	activityResult: { entry: ActivityLogEntry; modifiedAt: Date } | null,
+	activeWindowMs: number,
+	thresholdMs: number,
 ): ActivityDetection | null {
-  if (!activityResult) return null;
+	if (!activityResult) return null;
 
-  const { entry } = activityResult;
-  const entryTs = new Date(entry.ts);
-  if (Number.isNaN(entryTs.getTime())) return null;
+	const { entry } = activityResult;
+	const entryTs = new Date(entry.ts);
+	if (Number.isNaN(entryTs.getTime())) return null;
 
-  if (entry.state === "waiting_input" || entry.state === "blocked") {
-    return { state: entry.state, timestamp: entryTs };
-  }
+	if (entry.state === "waiting_input" || entry.state === "blocked") {
+		return { state: entry.state, timestamp: entryTs };
+	}
 
-  // Age-based decay: active→ready→idle, but never promote past the
-  // entry's detected state (e.g. a fresh "idle" entry stays "idle").
-  const ageMs = Math.max(0, Date.now() - entryTs.getTime());
-  let ageState: ActivityState;
-  if (ageMs <= activeWindowMs) ageState = "active";
-  else if (ageMs <= thresholdMs) ageState = "ready";
-  else ageState = "idle";
+	// Age-based decay: active→ready→idle, but never promote past the
+	// entry's detected state (e.g. a fresh "idle" entry stays "idle").
+	const ageMs = Math.max(0, Date.now() - entryTs.getTime());
+	let ageState: ActivityState;
+	if (ageMs <= activeWindowMs) ageState = "active";
+	else if (ageMs <= thresholdMs) ageState = "ready";
+	else ageState = "idle";
 
-  const activityRank: Record<string, number> = { active: 0, ready: 1, idle: 2 };
-  const entryRank = activityRank[entry.state] ?? 2;
-  const ageRank = activityRank[ageState] ?? 2;
-  const finalState = ageRank >= entryRank ? ageState : entry.state;
+	const activityRank: Record<string, number> = { active: 0, ready: 1, idle: 2 };
+	const entryRank = activityRank[entry.state] ?? 2;
+	const ageRank = activityRank[ageState] ?? 2;
+	const finalState = ageRank >= entryRank ? ageState : entry.state;
 
-  return { state: finalState, timestamp: entryTs };
+	return { state: finalState, timestamp: entryTs };
 }
 
 /**
@@ -198,15 +197,15 @@ export function getActivityFallbackState(
  * (keeping it mockable in tests).
  */
 export function classifyTerminalActivity(
-  terminalOutput: string,
-  detectActivity: (output: string) => ActivityState,
+	terminalOutput: string,
+	detectActivity: (output: string) => ActivityState,
 ): { state: ActivityState; trigger: string | undefined } {
-  const state = detectActivity(terminalOutput);
-  const trigger =
-    state === "waiting_input" || state === "blocked"
-      ? terminalOutput.trim().split("\n").slice(-3).join("\n")
-      : undefined;
-  return { state, trigger };
+	const state = detectActivity(terminalOutput);
+	const trigger =
+		state === "waiting_input" || state === "blocked"
+			? terminalOutput.trim().split("\n").slice(-3).join("\n")
+			: undefined;
+	return { state, trigger };
 }
 
 /**
@@ -217,21 +216,21 @@ export function classifyTerminalActivity(
  * Actionable states (waiting_input/blocked) always write immediately.
  */
 export async function recordTerminalActivity(
-  workspacePath: string,
-  terminalOutput: string,
-  detectActivity: (output: string) => ActivityState,
+	workspacePath: string,
+	terminalOutput: string,
+	detectActivity: (output: string) => ActivityState,
 ): Promise<void> {
-  const { state, trigger } = classifyTerminalActivity(terminalOutput, detectActivity);
+	const { state, trigger } = classifyTerminalActivity(terminalOutput, detectActivity);
 
-  // Deduplicate writes to reduce I/O. Skip when the state hasn't changed
-  // and the last entry is recent (<20s). Actionable states always write.
-  if (state !== "waiting_input" && state !== "blocked") {
-    const lastEntry = await readLastActivityEntry(workspacePath);
-    if (lastEntry && lastEntry.entry.state === state) {
-      const entryAgeMs = Date.now() - lastEntry.modifiedAt.getTime();
-      if (entryAgeMs < 20_000) return;
-    }
-  }
+	// Deduplicate writes to reduce I/O. Skip when the state hasn't changed
+	// and the last entry is recent (<20s). Actionable states always write.
+	if (state !== "waiting_input" && state !== "blocked") {
+		const lastEntry = await readLastActivityEntry(workspacePath);
+		if (lastEntry && lastEntry.entry.state === state) {
+			const entryAgeMs = Date.now() - lastEntry.modifiedAt.getTime();
+			if (entryAgeMs < 20_000) return;
+		}
+	}
 
-  await appendActivityEntry(workspacePath, state, "terminal", trigger);
+	await appendActivityEntry(workspacePath, state, "terminal", trigger);
 }

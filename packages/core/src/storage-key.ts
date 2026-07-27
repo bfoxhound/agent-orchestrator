@@ -5,65 +5,65 @@ import { relative, resolve, sep } from "node:path";
 // is stable across Windows/macOS/Linux. Without this, the same repo produces a
 // different storage key on Windows (drive letters + backslashes) than on Unix.
 function toPosixPath(p: string): string {
-  const resolved = resolve(p);
-  // On Windows, strip drive letter and flip separators. On Unix this is a no-op.
-  const driveStripped = resolved.replace(/^[A-Za-z]:/, "");
-  return driveStripped.split(sep).join("/");
+	const resolved = resolve(p);
+	// On Windows, strip drive letter and flip separators. On Unix this is a no-op.
+	const driveStripped = resolved.replace(/^[A-Za-z]:/, "");
+	return driveStripped.split(sep).join("/");
 }
 
 export interface StorageKeyInput {
-  originUrl: string | null;
-  gitRoot: string;
-  projectPath: string;
+	originUrl: string | null;
+	gitRoot: string;
+	projectPath: string;
 }
 
 export function normalizeOriginUrl(raw: string): string {
-  const trimmed = raw.trim();
-  const sshMatch = trimmed.match(/^git@([^:]+):(.+)$/);
+	const trimmed = raw.trim();
+	const sshMatch = trimmed.match(/^git@([^:]+):(.+)$/);
 
-  if (sshMatch) {
-    const host = sshMatch[1].toLowerCase();
-    const path = stripTrailingGit(stripSlashes(sshMatch[2]));
-    return `https://${host}/${path}`;
-  }
+	if (sshMatch) {
+		const host = sshMatch[1].toLowerCase();
+		const path = stripTrailingGit(stripSlashes(sshMatch[2]));
+		return `https://${host}/${path}`;
+	}
 
-  const normalized = trimmed.replace(/^[A-Za-z][A-Za-z0-9+.-]*:\/\//, (scheme) => scheme.toLowerCase());
-  let url: URL;
-  try {
-    url = new URL(normalized);
-  } catch {
-    throw new Error(`Invalid origin URL: ${raw}`);
-  }
+	const normalized = trimmed.replace(/^[A-Za-z][A-Za-z0-9+.-]*:\/\//, (scheme) => scheme.toLowerCase());
+	let url: URL;
+	try {
+		url = new URL(normalized);
+	} catch {
+		throw new Error(`Invalid origin URL: ${raw}`);
+	}
 
-  const host = url.hostname.toLowerCase();
-  const path = stripTrailingGit(stripSlashes(url.pathname));
-  return `https://${host}${path}`;
+	const host = url.hostname.toLowerCase();
+	const path = stripTrailingGit(stripSlashes(url.pathname));
+	return `https://${host}${path}`;
 }
 
 export function relativeSubdir(gitRoot: string, projectPath: string): string {
-  const rel = relative(resolve(gitRoot), resolve(projectPath));
-  if (rel === "" || rel === ".") return "";
+	const rel = relative(resolve(gitRoot), resolve(projectPath));
+	if (rel === "" || rel === ".") return "";
 
-  const relSegments = rel.split(sep);
-  if (relSegments[0] === "..") {
-    throw new Error(`projectPath ${projectPath} is not within gitRoot ${gitRoot}`);
-  }
+	const relSegments = rel.split(sep);
+	if (relSegments[0] === "..") {
+		throw new Error(`projectPath ${projectPath} is not within gitRoot ${gitRoot}`);
+	}
 
-  return relSegments.join("/");
+	return relSegments.join("/");
 }
 
 export function deriveStorageKey({ originUrl, gitRoot, projectPath }: StorageKeyInput): string {
-  const normalizedOrigin = originUrl !== null ? normalizeOriginUrl(originUrl) : `local://${toPosixPath(gitRoot)}`;
-  const subdir = relativeSubdir(gitRoot, projectPath);
-  const raw = `${normalizedOrigin}#${subdir}`;
-  return createHash("sha256").update(raw).digest("hex").slice(0, 12);
+	const normalizedOrigin = originUrl !== null ? normalizeOriginUrl(originUrl) : `local://${toPosixPath(gitRoot)}`;
+	const subdir = relativeSubdir(gitRoot, projectPath);
+	const raw = `${normalizedOrigin}#${subdir}`;
+	return createHash("sha256").update(raw).digest("hex").slice(0, 12);
 }
 
 function stripTrailingGit(value: string): string {
-  return value.replace(/\.git$/i, "");
+	return value.replace(/\.git$/i, "");
 }
 
 function stripSlashes(value: string): string {
-  if (value === "/") return "";
-  return value.replace(/\/+$/, "");
+	if (value === "/") return "";
+	return value.replace(/\/+$/, "");
 }

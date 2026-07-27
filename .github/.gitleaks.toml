@@ -64,7 +64,11 @@ title = "gitleaks config"
 
 [[rules]]
     description = "Slack"
-    regex = '''xox[baprs]-([0-9a-zA-Z]{10,48})?'''
+    # The token body is required, not optional. With the trailing `?` this
+    # matched a bare `xoxb-` anywhere in the tree — including prose and code
+    # comments that merely name the prefix — while catching no real token the
+    # stricter form misses.
+    regex = '''xox[baprs]-[0-9a-zA-Z]{10,48}'''
     tags = ["key", "Slack"]
 
 [[rules]]
@@ -172,6 +176,39 @@ title = "gitleaks config"
     files = ['''^\.?gitleaks.toml$''',
     '''(.*?)(png|jpg|gif|doc|docx|pdf|bin|xls|pyc|zip)$''',
     '''(go.mod|go.sum)$''']
+
+    # The secret-redaction code, its tests, and the audit note documenting it.
+    # These exist precisely to carry example token patterns: activity-events.ts
+    # names the prefixes it strips, and the test asserts the stripping works
+    # using AWS's own published example key (AKIAIOSFODNN7EXAMPLE).
+    #
+    # `paths`, not `files` — the latter is matched against the bare filename,
+    # so full-path patterns silently never match. Scoped by path rather than
+    # added to the commit list below, because that list only holds until
+    # something touches these files again, which is what the prettier
+    # auto-format job did.
+    paths = [
+        '''packages/core/src/activity-events\.ts$''',
+        '''packages/core/src/__tests__/activity-events\.test\.ts$''',
+        '''docs/SECURITY-AUDIT-SUMMARY\.md$''',
+    ]
+
+    # The two literal fixture values, so the redaction tests stay covered even
+    # if they move file. Both are documented non-secrets: AWS publishes the
+    # first as its canonical example key, and the second is a made-up Slack
+    # token the test feeds in to prove it gets redacted back out.
+    regexes = [
+        '''AKIAIOSFODNN7EXAMPLE''',
+        '''xoxb-1234567890-abcdefghij''',
+        # Documentation placeholders, e.g. SECURITY.md's
+        # "GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" in the section
+        # telling people to keep tokens in env vars. `x` is alphanumeric, so the
+        # token-shaped rules match the filler. A real credential does not carry
+        # a 20-character run of literal x, so this cannot mask one — and it has
+        # to be matched by pattern, because the finding lands on the PR's merge
+        # commit, whose SHA is different on every run.
+        '''x{20,}''',
+    ]
     # Historical false positives from the ReverbCode rewrite graft (#2166).
     # All offenders are example secret-patterns in security docs and
     # secret-redaction test fixtures, living in files already deleted from
@@ -188,4 +225,9 @@ title = "gitleaks config"
         "cb2fc088a83b394fc128235f4106bbfc88d8ede8",
         "f56338cbabd2185cab706ae09e1471b0bd9b7b43",
         "fc7d76ad54d6a7350de0fca298a1294ce8a1f3a2",
+        # The prettier auto-format job reflowed the whole tree, so the same
+        # redaction fixtures and security-doc examples reappear as additions in
+        # its commits. Same offenders, same rationale as the graft above.
+        "2f6a59e2e800b2ee23fc4cc305aecd95a90b8bac",
+        "d5a979623724fe26f012598958695a7429046e72",
     ]

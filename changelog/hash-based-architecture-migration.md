@@ -187,9 +187,9 @@ AO_DATA_DIR=~/.agent-orchestrator/a3b4c5d6e7f8-integrator/sessions/
 
 ```typescript
 interface OrchestratorConfig {
-  dataDir: string; // REMOVED
-  worktreeDir: string; // REMOVED
-  configPath: string; // NOW REQUIRED
+	dataDir: string; // REMOVED
+	worktreeDir: string; // REMOVED
+	configPath: string; // NOW REQUIRED
 }
 ```
 
@@ -197,12 +197,12 @@ interface OrchestratorConfig {
 
 ```typescript
 import {
-  getSessionsDir,
-  getWorktreesDir,
-  getProjectBaseDir,
-  generateConfigHash,
-  generateInstanceId,
-  validateAndStoreOrigin,
+	getSessionsDir,
+	getWorktreesDir,
+	getProjectBaseDir,
+	generateConfigHash,
+	generateInstanceId,
+	validateAndStoreOrigin,
 } from "@aoagents/ao-core";
 
 // Calculate paths dynamically

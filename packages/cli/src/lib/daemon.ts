@@ -36,31 +36,31 @@ export type NotifyResult = { ok: true } | { ok: false; reason: string };
  * managed in-process by `runStartup` + `installShutdownHandlers`).
  */
 export interface AttachedDaemon {
-  readonly outcome: "attached";
-  readonly port: number;
-  readonly pid: number;
-  /**
-   * Tell the dashboard a project was added or changed so it reloads its
-   * cached config. Returns `{ ok: false }` on any error; the dashboard might
-   * be down (user killed it manually), so callers typically warn rather than
-   * throw.
-   */
-  notifyProjectChange(): Promise<NotifyResult>;
+	readonly outcome: "attached";
+	readonly port: number;
+	readonly pid: number;
+	/**
+	 * Tell the dashboard a project was added or changed so it reloads its
+	 * cached config. Returns `{ ok: false }` on any error; the dashboard might
+	 * be down (user killed it manually), so callers typically warn rather than
+	 * throw.
+	 */
+	notifyProjectChange(): Promise<NotifyResult>;
 }
 
 async function postProjectsReload(port: number): Promise<NotifyResult> {
-  try {
-    const res = await fetch(`http://localhost:${port}/api/projects/reload`, {
-      method: "POST",
-    });
-    if (res.ok) return { ok: true };
-    return { ok: false, reason: `Dashboard reload returned ${res.status}` };
-  } catch (err) {
-    return {
-      ok: false,
-      reason: err instanceof Error ? err.message : String(err),
-    };
-  }
+	try {
+		const res = await fetch(`http://localhost:${port}/api/projects/reload`, {
+			method: "POST",
+		});
+		if (res.ok) return { ok: true };
+		return { ok: false, reason: `Dashboard reload returned ${res.status}` };
+	} catch (err) {
+		return {
+			ok: false,
+			reason: err instanceof Error ? err.message : String(err),
+		};
+	}
 }
 
 /**
@@ -69,12 +69,12 @@ async function postProjectsReload(port: number): Promise<NotifyResult> {
  * handle's methods are called.
  */
 export function attachToDaemon(running: RunningState): AttachedDaemon {
-  return {
-    outcome: "attached",
-    port: running.port,
-    pid: running.pid,
-    notifyProjectChange: () => postProjectsReload(running.port),
-  };
+	return {
+		outcome: "attached",
+		port: running.port,
+		pid: running.pid,
+		notifyProjectChange: () => postProjectsReload(running.port),
+	};
 }
 
 /**
@@ -90,16 +90,14 @@ export function attachToDaemon(running: RunningState): AttachedDaemon {
  * internally.
  */
 export async function killExistingDaemon(running: RunningState): Promise<void> {
-  await sweepDaemonChildren({ ownerPid: running.pid });
-  await killProcessTree(running.pid, "SIGTERM");
-  if (!(await waitForExit(running.pid, 5000))) {
-    console.log(chalk.yellow("  Process didn't exit cleanly, sending SIGKILL..."));
-    await killProcessTree(running.pid, "SIGKILL");
-    if (!(await waitForExit(running.pid, 3000))) {
-      throw new Error(
-        `Failed to stop AO process (PID ${running.pid}). Check permissions or stop it manually.`,
-      );
-    }
-  }
-  await unregister();
+	await sweepDaemonChildren({ ownerPid: running.pid });
+	await killProcessTree(running.pid, "SIGTERM");
+	if (!(await waitForExit(running.pid, 5000))) {
+		console.log(chalk.yellow("  Process didn't exit cleanly, sending SIGKILL..."));
+		await killProcessTree(running.pid, "SIGKILL");
+		if (!(await waitForExit(running.pid, 3000))) {
+			throw new Error(`Failed to stop AO process (PID ${running.pid}). Check permissions or stop it manually.`);
+		}
+	}
+	await unregister();
 }
