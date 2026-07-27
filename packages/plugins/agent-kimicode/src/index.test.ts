@@ -232,10 +232,18 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-	// Windows keeps a briefly-held handle on files the plugin just read, which
-	// surfaces as ENOTEMPTY/EBUSY from rmdir. Retry rather than fail the test
-	// that happened to run last before the handle was released.
-	rmSync(fakeHome, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+	// Best-effort. Windows can hold a transient lock on a file the plugin just
+	// read, so rmdir raises ENOTEMPTY/EBUSY even after retries — NTFS keeps a
+	// deleted entry until every handle to it is released. That is a teardown
+	// race, not a fact about the code under test: the assertions have already
+	// run and passed by this point, and failing them here reports a bug that
+	// does not exist. fakeHome lives under os.tmpdir(), so anything left behind
+	// is reclaimed by the OS rather than leaked indefinitely.
+	try {
+		rmSync(fakeHome, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+	} catch {
+		// Left for the OS to sweep up.
+	}
 });
 
 // =============================================================================

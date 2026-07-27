@@ -41,6 +41,25 @@ const SUMMARY_MAX_CHARS = 120;
 const SUMMARY_SCAN_BYTE_LIMIT = 1_000_000;
 
 /**
+ * Close a read stream and wait until the descriptor is actually released.
+ * destroy() only schedules the close, so returning without awaiting leaves the
+ * file briefly open — which on Windows keeps a lock on the containing
+ * directory. Resolves on error too: the goal is "no longer holding the file",
+ * and a failed close has already given that up.
+ */
+function closeReadStream(stream: ReturnType<typeof createReadStream>): Promise<void> {
+	return new Promise((resolve) => {
+		if (stream.closed) {
+			resolve();
+			return;
+		}
+		stream.once("close", () => resolve());
+		stream.once("error", () => resolve());
+		stream.destroy();
+	});
+}
+
+/**
  * Extract the first user prompt from a session's wire.jsonl as a fallback
  * summary. Stops after the first TurnBegin or after reading ~1 MB (whichever
  * comes first) so we never slurp huge session logs.
@@ -95,7 +114,7 @@ async function extractKimiSummary(sessionDir: string): Promise<string | null> {
 	} catch {
 		return null;
 	} finally {
-		input.destroy();
+		await closeReadStream(input);
 	}
 	return summary;
 }
