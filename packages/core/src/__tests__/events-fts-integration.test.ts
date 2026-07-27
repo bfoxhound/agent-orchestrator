@@ -10,7 +10,13 @@ import { createRequire } from "node:module";
 let Database: (new (path: string) => any) | null = null;
 try {
   const require = createRequire(import.meta.url);
-  Database = require("better-sqlite3") as new (path: string) => any;
+  const Candidate = require("better-sqlite3") as new (path: string) => any;
+  // Requiring the JS wrapper succeeds even when the compiled binding is absent
+  // — only opening a database surfaces "Could not locate the bindings file".
+  // Probe here so a platform without the native build skips these tests, as
+  // the comment above promises, instead of failing six of them at runtime.
+  new Candidate(":memory:").close();
+  Database = Candidate;
 } catch {
   // better-sqlite3 unavailable — integration tests will be skipped
 }

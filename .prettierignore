@@ -18,3 +18,8 @@ pnpm-lock.yaml
 
 # Go uses gofmt, not Prettier
 backend/
+
+# GitHub refuses a GITHUB_TOKEN-authenticated push that touches workflow files,
+# so the format job's auto-commit is rejected outright the moment Prettier
+# reformats one of these. Formatting them is not worth losing the whole job.
+.github/workflows/

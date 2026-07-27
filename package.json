@@ -8,7 +8,7 @@
 		"sqlc": "cd backend && go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1 generate",
 		"api:spec": "cd backend && go generate ./internal/httpd/apispec/...",
 		"api:ts": "openapi-typescript backend/internal/httpd/apispec/openapi.yaml -o frontend/src/api/schema.ts",
-		"api": "npm run api:spec && npm run api:ts",
+		"api": "pnpm run api:spec && pnpm run api:ts",
 		"build": "pnpm -r build",
 		"test": "pnpm -r --filter \"!@aoagents/ao-web\" test",
 		"test:integration": "pnpm -r run test:integration",
