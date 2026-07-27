@@ -9,7 +9,7 @@ import {
 	writeFileSync,
 	realpathSync,
 } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { delimiter, dirname, join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -31,6 +31,28 @@ const scriptPath = join(packageRoot, "src", "assets", "scripts", "ao-update.sh")
 function writeExecutable(path: string, content: string): void {
 	writeFileSync(path, content);
 	chmodSync(path, 0o755);
+}
+
+/**
+ * Build a spawn environment with `binDir` at the front of the search path.
+ *
+ * Two Windows details make the obvious `${binDir}:${process.env.PATH}` wrong
+ * there. The search-path separator is ";", so a ":" splices binDir onto the
+ * first real entry and the stubs are never found — the runner's actual git
+ * answers instead, and `git rev-parse --is-inside-work-tree` fails inside the
+ * temp dir. And the inherited variable is spelled "Path", so overriding "PATH"
+ * alone leaves both keys in the environment with the un-prefixed one free to
+ * win.
+ */
+function envWithStubs(binDir: string, extra: Record<string, string>): NodeJS.ProcessEnv {
+	// process.env is case-insensitive on Windows; a plain object copy is not.
+	const inherited = process.env.PATH || "";
+	const env: NodeJS.ProcessEnv = { ...process.env };
+	for (const key of Object.keys(env)) {
+		if (key.toUpperCase() === "PATH") delete env[key];
+	}
+	env.PATH = `${binDir}${delimiter}${inherited}`;
+	return { ...env, ...extra };
 }
 
 function createFakeBinary(binDir: string, name: string, body: string): void {
@@ -75,11 +97,7 @@ esac\nexit 0`,
 		);
 
 		const result = spawnSync("bash", [scriptPath, "--skip-smoke"], {
-			env: {
-				...process.env,
-				PATH: `${binDir}:${process.env.PATH || ""}`,
-				AO_REPO_ROOT: fakeRepo,
-			},
+			env: envWithStubs(binDir, { AO_REPO_ROOT: fakeRepo }),
 			encoding: "utf8",
 		});
 
@@ -139,11 +157,7 @@ esac\nexit 0`,
 			);
 
 			const result = spawnSync("bash", [scriptPath, "--skip-smoke"], {
-				env: {
-					...process.env,
-					PATH: `${binDir}:${process.env.PATH || ""}`,
-					AO_REPO_ROOT: fakeRepo,
-				},
+				env: envWithStubs(binDir, { AO_REPO_ROOT: fakeRepo }),
 				encoding: "utf8",
 			});
 
@@ -209,11 +223,7 @@ exit 0`,
 		);
 
 		const result = spawnSync("bash", [scriptPath, "--skip-smoke"], {
-			env: {
-				...process.env,
-				PATH: `${binDir}:${process.env.PATH || ""}`,
-				AO_REPO_ROOT: fakeRepo,
-			},
+			env: envWithStubs(binDir, { AO_REPO_ROOT: fakeRepo }),
 			encoding: "utf8",
 		});
 
@@ -244,11 +254,7 @@ exit 0`,
 		);
 
 		const result = spawnSync("bash", [scriptPath, "--smoke-only"], {
-			env: {
-				...process.env,
-				PATH: `${binDir}:${process.env.PATH || ""}`,
-				AO_REPO_ROOT: fakeRepo,
-			},
+			env: envWithStubs(binDir, { AO_REPO_ROOT: fakeRepo }),
 			encoding: "utf8",
 		});
 
@@ -284,11 +290,7 @@ exit 0`,
 		createFakeBinary(binDir, "node", 'if [ "$1" = "--version" ]; then printf "v20.11.1\\n"; fi\nexit 0');
 
 		const result = spawnSync("bash", [scriptPath], {
-			env: {
-				...process.env,
-				PATH: `${binDir}:${process.env.PATH || ""}`,
-				AO_REPO_ROOT: fakeRepo,
-			},
+			env: envWithStubs(binDir, { AO_REPO_ROOT: fakeRepo }),
 			encoding: "utf8",
 		});
 
@@ -343,11 +345,7 @@ exit 0`,
 			);
 
 			const result = spawnSync("bash", [scriptPath], {
-				env: {
-					...process.env,
-					PATH: `${binDir}:${process.env.PATH || ""}`,
-					AO_REPO_ROOT: fakeRepo,
-				},
+				env: envWithStubs(binDir, { AO_REPO_ROOT: fakeRepo }),
 				encoding: "utf8",
 			});
 
@@ -408,11 +406,7 @@ exit 0`,
 		createFakeBinary(binDir, "node", 'if [ "$1" = "--version" ]; then printf "v20.11.1\\n"; fi\nexit 0');
 
 		const result = spawnSync("bash", [scriptPath, "--skip-smoke"], {
-			env: {
-				...process.env,
-				PATH: `${binDir}:${process.env.PATH || ""}`,
-				AO_REPO_ROOT: fakeRepo,
-			},
+			env: envWithStubs(binDir, { AO_REPO_ROOT: fakeRepo }),
 			encoding: "utf8",
 		});
 
