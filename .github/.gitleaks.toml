@@ -217,4 +217,9 @@ title = "gitleaks config"
         "cb2fc088a83b394fc128235f4106bbfc88d8ede8",
         "f56338cbabd2185cab706ae09e1471b0bd9b7b43",
         "fc7d76ad54d6a7350de0fca298a1294ce8a1f3a2",
+        # The prettier auto-format job reflowed the whole tree, so the same
+        # redaction fixtures and security-doc examples reappear as additions in
+        # its commits. Same offenders, same rationale as the graft above.
+        "2f6a59e2e800b2ee23fc4cc305aecd95a90b8bac",
+        "d5a979623724fe26f012598958695a7429046e72",
     ]

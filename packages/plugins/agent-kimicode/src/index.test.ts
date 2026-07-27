@@ -218,15 +218,24 @@ beforeEach(() => {
 	mockRecordTerminalActivity.mockResolvedValue(undefined);
 	mockSetupPathWrapperWorkspace.mockResolvedValue(undefined);
 	mockIsWindows.mockReturnValue(false);
-	// realpath so that on macOS we get /private/var/... instead of /var/...
-	// (/var is a symlink on macOS). Without this, the plugin hashes
-	// realpath(workspacePath) while the test wrote under the unresolved path,
-	// and the hashes diverge.
-	fakeHome = realpathSync(mkdtempSync(join(tmpdir(), "kimicode-test-")));
+	// Canonicalise so the plugin, which hashes realpath(workspacePath), agrees
+	// with the path the fixtures wrote under. Two platforms need this for
+	// different reasons: macOS resolves /var to /private/var, and Windows hands
+	// back an 8.3 short name from tmpdir() — "C:\Users\RUNNER~1\..." — that the
+	// plugin's realpath() expands to "C:\Users\runneradmin\...". Either
+	// divergence sends discovery to a different md5 bucket than the one the
+	// test populated, and every lookup returns undefined.
+	//
+	// .native is required: plain realpathSync resolves symlinks but leaves 8.3
+	// names untouched, so it fixes macOS and silently misses Windows.
+	fakeHome = realpathSync.native(mkdtempSync(join(tmpdir(), "kimicode-test-")));
 });
 
 afterEach(() => {
-	rmSync(fakeHome, { recursive: true, force: true });
+	// Windows keeps a briefly-held handle on files the plugin just read, which
+	// surfaces as ENOTEMPTY/EBUSY from rmdir. Retry rather than fail the test
+	// that happened to run last before the handle was released.
+	rmSync(fakeHome, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
 });
 
 // =============================================================================
