@@ -200,6 +200,14 @@ title = "gitleaks config"
     regexes = [
         '''AKIAIOSFODNN7EXAMPLE''',
         '''xoxb-1234567890-abcdefghij''',
+        # Documentation placeholders, e.g. SECURITY.md's
+        # "GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" in the section
+        # telling people to keep tokens in env vars. `x` is alphanumeric, so the
+        # token-shaped rules match the filler. A real credential does not carry
+        # a 20-character run of literal x, so this cannot mask one — and it has
+        # to be matched by pattern, because the finding lands on the PR's merge
+        # commit, whose SHA is different on every run.
+        '''x{20,}''',
     ]
     # Historical false positives from the ReverbCode rewrite graft (#2166).
     # All offenders are example secret-patterns in security docs and
