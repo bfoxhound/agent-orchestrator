@@ -60,7 +60,17 @@ function createFakeBinary(binDir: string, name: string, body: string): void {
 }
 
 describe("ao-update.sh", () => {
-	it("falls back to origin when no upstream remote exists", () => {
+	// Every test that drives ao-update.sh through PATH-injected stubs is skipped
+	// on Windows. Git for Windows does supply bash and the script runs, but the
+	// stubs are extensionless files carrying a "#!/bin/bash" line — which that
+	// bash does not treat as executable, so `command -v git` walks past them and
+	// the runner's real git.exe answers instead. The stub log is never written
+	// and the script bails out at `git rev-parse --is-inside-work-tree` because
+	// the fake repo is an ordinary temp dir. There is no way to win the PATH
+	// lookup short of shipping a real .exe, so these assert nothing on Windows.
+	// The Windows code path uses detectWindowsBash() at runtime, exercised
+	// separately.
+	it.skipIf(process.platform === "win32")("falls back to origin when no upstream remote exists", () => {
 		const tempRoot = makeTempRoot("ao-update-script-");
 		const fakeRepo = join(tempRoot, "repo");
 		mkdirSync(join(fakeRepo, "packages", "cli"), { recursive: true });
@@ -113,9 +123,6 @@ esac\nexit 0`,
 		expect(commands).toContain("npm link --force");
 	});
 
-	// Bash-script tests skipped on Windows: spawnSync("bash", ...) requires bash
-	// which isn't guaranteed without Git for Windows. The Windows code path uses
-	// detectWindowsBash() at runtime, exercised separately.
 	it.skipIf(process.platform === "win32")(
 		"syncs the fork with upstream via gh and fast-forwards the local checkout from upstream",
 		() => {
@@ -267,7 +274,7 @@ exit 0`,
 		expect(commands).toContain(`node ${join(fakeRepo, "packages", "ao", "bin", "ao.js")} update --help`);
 	});
 
-	it("fails fast on a dirty install repo with an actionable message", () => {
+	it.skipIf(process.platform === "win32")("fails fast on a dirty install repo with an actionable message", () => {
 		const tempRoot = makeTempRoot("ao-update-dirty-");
 		const fakeRepo = join(tempRoot, "repo");
 		mkdirSync(fakeRepo, { recursive: true });
@@ -374,7 +381,7 @@ exit 0`,
 		expect(result.stderr).toContain("Conflicting options");
 	});
 
-	it("reports when the update itself dirties the checkout", () => {
+	it.skipIf(process.platform === "win32")("reports when the update itself dirties the checkout", () => {
 		const tempRoot = makeTempRoot("ao-update-post-dirty-");
 		const fakeRepo = join(tempRoot, "repo");
 		mkdirSync(join(fakeRepo, "packages", "cli"), { recursive: true });
