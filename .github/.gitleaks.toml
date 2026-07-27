@@ -64,7 +64,11 @@ title = "gitleaks config"
 
 [[rules]]
     description = "Slack"
-    regex = '''xox[baprs]-([0-9a-zA-Z]{10,48})?'''
+    # The token body is required, not optional. With the trailing `?` this
+    # matched a bare `xoxb-` anywhere in the tree — including prose and code
+    # comments that merely name the prefix — while catching no real token the
+    # stricter form misses.
+    regex = '''xox[baprs]-[0-9a-zA-Z]{10,48}'''
     tags = ["key", "Slack"]
 
 [[rules]]
@@ -171,7 +175,17 @@ title = "gitleaks config"
     description = "Allowlisted files"
     files = ['''^\.?gitleaks.toml$''',
     '''(.*?)(png|jpg|gif|doc|docx|pdf|bin|xls|pyc|zip)$''',
-    '''(go.mod|go.sum)$''']
+    '''(go.mod|go.sum)$''',
+    # The secret-redaction code, its tests, and the audit note that documents
+    # it. These files exist precisely to carry example token patterns —
+    # activity-events.ts names the prefixes it strips, and the test asserts
+    # they get stripped using AWS's own published example key
+    # (AKIAIOSFODNN7EXAMPLE). Matched by path rather than by commit: the
+    # commit list below only holds until something touches these files again,
+    # which is exactly what the prettier auto-format job did.
+    '''packages/core/src/activity-events\.ts$''',
+    '''packages/core/src/__tests__/activity-events\.test\.ts$''',
+    '''docs/SECURITY-AUDIT-SUMMARY\.md$''']
     # Historical false positives from the ReverbCode rewrite graft (#2166).
     # All offenders are example secret-patterns in security docs and
     # secret-redaction test fixtures, living in files already deleted from
