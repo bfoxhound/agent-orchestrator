@@ -1,5 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readFileSync, readdirSync, rmSync, realpathSync } from "node:fs";
+import {
+	mkdtempSync,
+	mkdirSync,
+	writeFileSync,
+	existsSync,
+	readFileSync,
+	readdirSync,
+	rmSync,
+	realpathSync,
+} from "node:fs";
 import { EventEmitter } from "node:events";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
