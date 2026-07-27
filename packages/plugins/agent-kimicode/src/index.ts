@@ -52,9 +52,18 @@ async function extractKimiSummary(sessionDir: string): Promise<string | null> {
 	// still be planted as symlinks pointing at /etc/passwd or /dev/zero.
 	if (!(await isKimiSessionFile(wirePath))) return null;
 	let summary: string | null = null;
+	// Held so it can be destroyed explicitly. rl.close() ends the readline
+	// interface but leaves the underlying descriptor open, and every exit from
+	// the loop below is a `break` — on the byte cap or on the first TurnBegin,
+	// which is the common case — so the stream is abandoned mid-read. POSIX
+	// tolerates unlinking a file that still has an open handle, so this went
+	// unnoticed; on Windows the handle keeps the session directory alive and
+	// removing it fails with ENOTEMPTY. Left unfixed it also leaks a descriptor
+	// per summary extraction in the daemon.
+	const input = createReadStream(wirePath, { encoding: "utf-8" });
 	try {
 		const rl = createInterface({
-			input: createReadStream(wirePath, { encoding: "utf-8" }),
+			input,
 			crlfDelay: Infinity,
 		});
 		let bytes = 0;
@@ -85,6 +94,8 @@ async function extractKimiSummary(sessionDir: string): Promise<string | null> {
 		rl.close();
 	} catch {
 		return null;
+	} finally {
+		input.destroy();
 	}
 	return summary;
 }
