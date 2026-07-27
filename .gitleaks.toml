@@ -28,4 +28,17 @@ regexes = [
   "your-token-here",
   "example\\.com",
 
+  # Agent session-ID fixtures in the Go adapter table tests. These are the
+  # value of ports.MetadataKeyAgentSessionID — a session identifier the daemon
+  # generates, not a credential. Listed individually so any other secret
+  # appearing in those files still trips the scan.
+  "019e950e-52e0-7411-961b-d380ca7e610f",
+  "abcd1234-5678-90ab-cdef-1234567890ab",
+
+  # PostHog *project* API key (`phc_` prefix). Project keys are write-only
+  # ingest identifiers meant to ship in client code — this one is imported by
+  # frontend/src/renderer/lib/telemetry.ts and bundled into the renderer, so it
+  # is already public by design. Personal API keys (`phx_`) are the secret kind
+  # and are deliberately not allowlisted here.
+  "phc_uXAqS8nokL2QLSGBZSEMHTUNVXsFeXu3SrcWG7fjEyVH",
 ]

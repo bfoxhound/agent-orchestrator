@@ -84,6 +84,14 @@ jobs:
 
       - name: Dependency Review
         uses: actions/dependency-review-action@v4
+        # Non-blocking. The action hard-fails with "Dependency review is not
+        # supported on this repository" unless the Dependency graph is enabled
+        # under Settings → Code security and analysis — it is off by default on
+        # forks, so every PR here fails on a repo setting rather than on
+        # anything in the diff. Enabling that setting makes this step start
+        # reporting real findings again with no change to this file; until then
+        # it must not gate merges.
+        continue-on-error: true
         with:
           fail-on-severity: moderate
 

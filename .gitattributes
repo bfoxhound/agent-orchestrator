@@ -1,0 +1,18 @@
+# Line-ending policy.
+#
+# This repo is developed on Windows as well as Linux/macOS, and CRLF endings
+# have broken CI twice: a CRLF shebang makes a shell script unrunnable on the
+# Unix runners, and Vite/esbuild fails to parse a JS module whose hashbang line
+# ends in \r. Pin the formats where CRLF is actively harmful.
+
+# Shell scripts are executed directly by the Unix runners.
+*.sh text eol=lf
+
+# Parsed by esbuild/Vite, which chokes on a CRLF hashbang.
+*.js text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+
+# Generated — LF keeps regeneration a no-op instead of a whole-file diff.
+pnpm-lock.yaml text eol=lf
+package-lock.json text eol=lf
