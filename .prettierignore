@@ -9,9 +9,12 @@ frontend/release
 frontend/test-results
 frontend/playwright-report
 
-# Lockfiles
+# Lockfiles — generated, and the format job commits its output back, so
+# leaving pnpm-lock.yaml in scope means every push rewrites ~2900 lines of a
+# file pnpm owns.
 package-lock.json
 frontend/package-lock.json
+pnpm-lock.yaml
 
 # Go uses gofmt, not Prettier
 backend/
