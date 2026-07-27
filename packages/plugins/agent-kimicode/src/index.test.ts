@@ -15,6 +15,7 @@ import {
 	utimesSync,
 	symlinkSync,
 	realpathSync,
+	statSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -82,7 +83,23 @@ import { create, manifest, default as defaultExport, detect, _resetSessionMatchC
 // (~/.kimi/sessions/<md5(cwd)>/<session-uuid>/{context,wire}.jsonl).
 // ---------------------------------------------------------------------------
 function workspaceHash(workspacePath: string): string {
-	return createHash("md5").update(workspacePath).digest("hex");
+	// Mirror production's resolveWorkspacePath, which stat()s and then
+	// realpath()s, so a workspace that exists on disk is hashed in resolved
+	// form and one that doesn't falls back to the raw string.
+	//
+	// Hashing the raw string unconditionally happened to agree on Linux only
+	// because fakeHome is already realpath'd. Windows canonicalises further
+	// (drive-letter case, 8.3 short names), so the bucket a fixture wrote to
+	// and the bucket discovery scanned diverged, and every discovery-backed
+	// assertion saw undefined.
+	let resolved = workspacePath;
+	try {
+		statSync(workspacePath);
+		resolved = realpathSync(workspacePath);
+	} catch {
+		// Not on disk — production keeps the raw path here too.
+	}
+	return createHash("md5").update(resolved).digest("hex");
 }
 
 function writeKimiSession(

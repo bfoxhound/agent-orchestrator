@@ -87,106 +87,18 @@ if [ ! -f agent-orchestrator.yaml ]; then
 fi
 end_step "Step 5: Configuration validated"
 
-# Step 6: Start orchestrator (in background)
-start_step "Step 6: Start orchestrator"
-# Start in background and capture PID
-ao start --no-orchestrator &  # Only start dashboard, not the orchestrator session
-DASHBOARD_PID=$!
-
-# Wait for dashboard to be ready (max 30 seconds)
-echo "  Waiting for dashboard to start..."
-for i in {1..30}; do
-    if curl -s http://localhost:9000 > /dev/null 2>&1; then
-        break
-    fi
-    if ! kill -0 $DASHBOARD_PID 2>/dev/null; then
-        fail_step "Step 6: Dashboard process died"
-    fi
-    sleep 1
-done
-
-if ! curl -s http://localhost:9000 > /dev/null 2>&1; then
-    fail_step "Step 6: Dashboard not responding after 30s"
-fi
-
-end_step "Step 6: Dashboard started successfully"
-
-# Step 7: Verify dashboard endpoints
-start_step "Step 7: Verify dashboard API"
-
-# Test /api/sessions endpoint
-if ! curl -sf http://localhost:9000/api/sessions > /dev/null; then
-    fail_step "Step 7: /api/sessions endpoint failed"
-fi
-
-# Test SSE events endpoint (just verify it responds, don't wait for events)
-if ! timeout 2 curl -sf http://localhost:9000/api/events > /dev/null 2>&1; then
-    # SSE might timeout, that's ok - we just want to verify it exists
-    :
-fi
-
-end_step "Step 7: Dashboard API responding"
-
-# Step 8: Verify WebSocket terminal servers
-start_step "Step 8: Verify WebSocket servers"
-
-# Check if direct terminal WebSocket server is running (required for terminal feature)
-# Default port is 14801 (14800 range chosen to avoid conflicts with dev tools)
-DIRECT_TERMINAL_PORT="${DIRECT_TERMINAL_PORT:-14801}"
-echo "  Checking WebSocket server on port $DIRECT_TERMINAL_PORT..."
-max_retries=10
-for i in $(seq 1 $max_retries); do
-    if curl -sf "http://localhost:$DIRECT_TERMINAL_PORT/health" > /dev/null 2>&1; then
-        echo "  ✓ WebSocket server responding"
-        break
-    fi
-    if [ $i -eq $max_retries ]; then
-        fail_step "Step 8: WebSocket terminal server not responding (bug: ao start didn't launch all services)"
-    fi
-    sleep 1
-done
-
-end_step "Step 8: WebSocket servers verified"
-
-# Step 9: Verify orchestrator terminal page (end-to-end test)
-start_step "Step 9: Verify orchestrator terminal feature"
-
-# Create orchestrator session first (so we have something to test)
-echo "  Creating test orchestrator session..."
-tmux new-session -d -s test-project-orchestrator || true
-
-# Write minimal metadata
-mkdir -p /tmp/ao-test-data
-cat > /tmp/ao-test-data/test-project-orchestrator << 'EOF'
-worktree=/tmp/ao-test-project
-branch=main
-status=working
-project=test-project
-EOF
-
-# Test that the session detail page loads (where terminal would be)
-if ! curl -sf http://localhost:9000/sessions/test-project-orchestrator > /dev/null; then
-    fail_step "Step 9: Orchestrator session page failed to load"
-fi
-
-# Cleanup test session
-tmux kill-session -t test-project-orchestrator 2>/dev/null || true
-
-end_step "Step 9: Orchestrator terminal page accessible"
-
-# Step 10: Cleanup
-start_step "Step 10: Cleanup"
-kill $DASHBOARD_PID 2>/dev/null || true
-# Wait for process to exit
-sleep 2
-# Force kill if still running
-kill -9 $DASHBOARD_PID 2>/dev/null || true
-
-# Kill any remaining Node processes (dashboard, websocket servers)
-pkill -f "node.*next.*dev" || true
-pkill -f "tsx.*terminal" || true
-
-end_step "Step 10: Cleanup completed"
+# Steps 6-10 removed. They started a long-running dashboard with
+# `ao start --no-orchestrator` and polled http://localhost:9000 plus the
+# terminal WebSocket on :14801. That flag no longer exists: `ao start` now
+# resolves the installed desktop app, opens it, and exits, because the app
+# owns the daemon, state, and updates. There is no headless dashboard to poll
+# and no desktop app inside this container, so those steps tested an
+# architecture the CLI no longer has.
+#
+# What remains still covers the thing this test is named for: a fresh machine
+# can clone the repo, run setup.sh, get a working `ao` on PATH, and produce a
+# config the CLI accepts. Restoring runtime coverage needs a decision about
+# what onboarding means under the desktop-app split, not a flag rename.
 
 # Calculate total time
 end_time=$(date +%s)

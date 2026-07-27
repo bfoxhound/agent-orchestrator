@@ -175,17 +175,32 @@ title = "gitleaks config"
     description = "Allowlisted files"
     files = ['''^\.?gitleaks.toml$''',
     '''(.*?)(png|jpg|gif|doc|docx|pdf|bin|xls|pyc|zip)$''',
-    '''(go.mod|go.sum)$''',
-    # The secret-redaction code, its tests, and the audit note that documents
-    # it. These files exist precisely to carry example token patterns —
-    # activity-events.ts names the prefixes it strips, and the test asserts
-    # they get stripped using AWS's own published example key
-    # (AKIAIOSFODNN7EXAMPLE). Matched by path rather than by commit: the
-    # commit list below only holds until something touches these files again,
-    # which is exactly what the prettier auto-format job did.
-    '''packages/core/src/activity-events\.ts$''',
-    '''packages/core/src/__tests__/activity-events\.test\.ts$''',
-    '''docs/SECURITY-AUDIT-SUMMARY\.md$''']
+    '''(go.mod|go.sum)$''']
+
+    # The secret-redaction code, its tests, and the audit note documenting it.
+    # These exist precisely to carry example token patterns: activity-events.ts
+    # names the prefixes it strips, and the test asserts the stripping works
+    # using AWS's own published example key (AKIAIOSFODNN7EXAMPLE).
+    #
+    # `paths`, not `files` — the latter is matched against the bare filename,
+    # so full-path patterns silently never match. Scoped by path rather than
+    # added to the commit list below, because that list only holds until
+    # something touches these files again, which is what the prettier
+    # auto-format job did.
+    paths = [
+        '''packages/core/src/activity-events\.ts$''',
+        '''packages/core/src/__tests__/activity-events\.test\.ts$''',
+        '''docs/SECURITY-AUDIT-SUMMARY\.md$''',
+    ]
+
+    # The two literal fixture values, so the redaction tests stay covered even
+    # if they move file. Both are documented non-secrets: AWS publishes the
+    # first as its canonical example key, and the second is a made-up Slack
+    # token the test feeds in to prove it gets redacted back out.
+    regexes = [
+        '''AKIAIOSFODNN7EXAMPLE''',
+        '''xoxb-1234567890-abcdefghij''',
+    ]
     # Historical false positives from the ReverbCode rewrite graft (#2166).
     # All offenders are example secret-patterns in security docs and
     # secret-redaction test fixtures, living in files already deleted from
