@@ -12,13 +12,13 @@ Operational guidance for coding agents working in this repository. Keep changes 
 
 ## Commands
 
-From the repo root unless noted:
+From the repo root unless noted. The root is a **pnpm** workspace (`packageManager: pnpm@9.15.0`; CI installs with `pnpm install --frozen-lockfile`) — use `pnpm` for root scripts. `frontend/` is deliberately **not** part of the pnpm workspace and remains npm-managed (`npm ci`), so frontend-local commands keep using `npm`.
 
 ```bash
-npm run lint                         # backend go test ./... + golangci-lint v2.12.2
-npm run frontend:typecheck           # frontend TypeScript check
-npm run sqlc                         # regenerate backend/internal/storage/sqlite/gen from queries/schema
-npm run api                          # regenerate OpenAPI spec + frontend TS types (see API contract changes below)
+pnpm run lint                        # backend go test ./... + golangci-lint v2.12.2
+pnpm run frontend:typecheck          # frontend TypeScript check
+pnpm run sqlc                        # regenerate backend/internal/storage/sqlite/gen from queries/schema
+pnpm run api                         # regenerate OpenAPI spec + frontend TS types (see API contract changes below)
 npx @redwoodjs/agent-ci run --all    # local workflow validation; requires Docker socket
 ```
 
@@ -83,7 +83,7 @@ For code entry points:
 - Do not treat failed/unknown runtime probes as proof a session is dead.
 - Do not force-delete dirty registered worktrees.
 - Do not modify already-merged SQLite migrations. Add a new migration instead.
-- Do not hand-edit `backend/internal/storage/sqlite/gen/*`; change `backend/internal/storage/sqlite/queries/*` or migrations and run `npm run sqlc`.
+- Do not hand-edit `backend/internal/storage/sqlite/gen/*`; change `backend/internal/storage/sqlite/queries/*` or migrations and run `pnpm run sqlc`.
 - SQLite change events come from DB triggers into `change_log`; do not add parallel manual CDC emission from store methods unless the architecture changes explicitly.
 - Keep generated OpenAPI/API DTO drift in mind: controller response shapes live in `backend/internal/httpd/controllers/dto.go` and tests may assert CLI/HTTP wire compatibility.
 - Do not add network calls to tests unless the package already has an integration/e2e pattern for them. Prefer `httptest`, fakes, and injected dependencies.
@@ -102,14 +102,14 @@ The daemon API is code-first. The OpenAPI spec and frontend TypeScript types are
 **Regenerate after editing:**
 
 ```bash
-npm run api          # runs api:spec then api:ts in sequence
+pnpm run api         # runs api:spec then api:ts in sequence
 ```
 
 This is equivalent to running:
 
 ```bash
-npm run api:spec     # cd backend && go generate ./internal/httpd/apispec/...
-npm run api:ts       # npx openapi-typescript@7.4.4 backend/internal/httpd/apispec/openapi.yaml -o frontend/src/api/schema.ts
+pnpm run api:spec    # cd backend && go generate ./internal/httpd/apispec/...
+pnpm run api:ts      # openapi-typescript backend/internal/httpd/apispec/openapi.yaml -o frontend/src/api/schema.ts
 ```
 
 **Verify:**
