@@ -64,6 +64,7 @@ one), never a bare PATH lookup.
   `aoagents/ReverbCode` (upstream's product repo); anyone running the skill from
   a fork would search for duplicates and file issues against that foreign repo.
   Always file on the repo the checkout actually belongs to.
+
 - **Verify your binary:** confirm `ao status` shows port **3001** (see warning above).
 - **Record source:** chat URL, reporter name, attachments.
 
