@@ -1,5 +1,17 @@
 # @aoagents/ao-plugin-tracker-linear
 
+## 0.11.0
+
+### Patch Changes
+
+- 0d9fc4e: Retry transient Linear API HTTP failures in the direct transport to reduce flakes from brief 5xx/429 responses.
+- Updated dependencies [0d9fc4e]
+- Updated dependencies [0d9fc4e]
+- Updated dependencies [0d9fc4e]
+- Updated dependencies [0d9fc4e]
+- Updated dependencies [0d9fc4e]
+  - @aoagents/ao-core@0.11.0
+
 ## 0.8.0
 
 ### Patch Changes

@@ -1,5 +1,45 @@
 # @aoagents/ao-cli
 
+## 0.11.0
+
+### Minor Changes
+
+- 0d9fc4e: Wire CLI activity events into `ao start`, `ao stop`, `ao spawn`, `ao update`, `ao setup`, `ao migrate-storage`, and shared CLI helpers. `ao events list --source cli` now answers RCA questions like "did AO start cleanly?", "was AO killed or did it crash?", and "did `ao spawn`/`ao stop` fail and why?". Adds `"cli"` to the `ActivityEventSource` union and 30+ event-emit sites covering startup, graceful and forced shutdown, restore, project resolution, config recovery, and migration paths.
+
+### Patch Changes
+
+- 0d9fc4e: Wire activity events for the recovery subsystem, metadata-corruption detection, and agent-report apply path. New event kinds: `recovery.session_failed`, `recovery.action_failed`, `metadata.corrupt_detected`, `api.agent_report.session_not_found`, `api.agent_report.transition_rejected`. Adds `"recovery"` to the `ActivityEventSource` union. Lets RCA reconstruct `ao recover` invocations, find every silent metadata overwrite, and audit rejected agent transitions. Adds `ao events list --source` and `--kind` so these forensic event queries are available from the CLI.
+- 0d9fc4e: Rebuild missing better-sqlite3 native bindings during ao postinstall and replace noisy activity-events native-binding failures with a one-line diagnostic.
+- Updated dependencies [0d9fc4e]
+- Updated dependencies [0d9fc4e]
+- Updated dependencies [0d9fc4e]
+- Updated dependencies [0d9fc4e]
+- Updated dependencies [0d9fc4e]
+- Updated dependencies [0d9fc4e]
+  - @aoagents/ao-core@0.11.0
+  - @aoagents/ao-web@0.11.0
+  - @aoagents/ao-plugin-tracker-linear@0.11.0
+  - @aoagents/ao-plugin-agent-aider@0.11.0
+  - @aoagents/ao-plugin-agent-claude-code@0.11.0
+  - @aoagents/ao-plugin-agent-codex@0.11.0
+  - @aoagents/ao-plugin-agent-cursor@0.11.0
+  - @aoagents/ao-plugin-agent-kimicode@0.11.0
+  - @aoagents/ao-plugin-agent-opencode@0.11.0
+  - @aoagents/ao-plugin-notifier-composio@0.11.0
+  - @aoagents/ao-plugin-notifier-desktop@0.11.0
+  - @aoagents/ao-plugin-notifier-discord@0.11.0
+  - @aoagents/ao-plugin-notifier-openclaw@0.11.0
+  - @aoagents/ao-plugin-notifier-slack@0.11.0
+  - @aoagents/ao-plugin-notifier-webhook@0.11.0
+  - @aoagents/ao-plugin-runtime-process@0.11.0
+  - @aoagents/ao-plugin-runtime-tmux@0.11.0
+  - @aoagents/ao-plugin-scm-github@0.11.0
+  - @aoagents/ao-plugin-terminal-iterm2@0.11.0
+  - @aoagents/ao-plugin-terminal-web@0.11.0
+  - @aoagents/ao-plugin-tracker-github@0.11.0
+  - @aoagents/ao-plugin-workspace-clone@0.11.0
+  - @aoagents/ao-plugin-workspace-worktree@0.11.0
+
 ## 0.8.0
 
 ### Patch Changes

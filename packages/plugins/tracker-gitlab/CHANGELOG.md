@@ -1,5 +1,17 @@
 # @aoagents/ao-plugin-tracker-gitlab
 
+## 0.11.0
+
+### Patch Changes
+
+- Updated dependencies [0d9fc4e]
+- Updated dependencies [0d9fc4e]
+- Updated dependencies [0d9fc4e]
+- Updated dependencies [0d9fc4e]
+- Updated dependencies [0d9fc4e]
+  - @aoagents/ao-core@0.11.0
+  - @aoagents/ao-plugin-scm-gitlab@0.11.0
+
 ## 0.8.0
 
 ### Patch Changes
